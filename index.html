@@ -228,7 +228,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Present mode */
 .pbar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:900;gap:6px;align-items:center;background:var(--bar);border:1px solid var(--line);border-radius:999px;padding:4px 6px;box-shadow:var(--shadow);opacity:.35;transition:opacity .2s}
-.pbar:hover,.pbar:focus-within{opacity:1}
+.pbar:hover,.pbar:focus-within,.pbar.wake{opacity:1}
 .calm *,.calm *::before,.calm *::after{transition:none!important;animation:none!important}
 .calm-clock{position:absolute;right:2%;bottom:3%;z-index:50;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:.25em .6em;font:700 max(4vh,28px)/1 var(--font-display);box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
 .pbar span{padding:0 8px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1225,6 +1225,14 @@ function syncPbar(){
   $('#pName').textContent=cur().name||'Untitled';
   $('#pPrev').disabled=$('#pNext').disabled=S.screens.length<2;
 }
+/* The present bar shows fully on entering Present mode and on mouse movement, then fades after 3 seconds. */
+let wakeT=null;
+function wakePbar(){
+  if(!presenting)return;
+  const b=$('#pbar');b.classList.add('wake');
+  clearTimeout(wakeT);wakeT=setTimeout(()=>b.classList.remove('wake'),3000);
+}
+document.addEventListener('pointermove',wakePbar);
 function setPresent(on){
   presenting=on;document.body.classList.toggle('present',on);closePop();
   if(on){
@@ -1233,6 +1241,7 @@ function setPresent(on){
     try{document.exitFullscreen();}catch(e){}
   }
   syncPbar();
+  if(on)wakePbar();
 }
 document.addEventListener('fullscreenchange',()=>{
   if(document.fullscreenElement)fsOn=true;
