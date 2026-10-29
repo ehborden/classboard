@@ -102,6 +102,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tb{height:24px;min-width:24px;padding:0 7px;border:1px solid transparent;background:transparent;color:var(--muted);font:600 12px var(--font-body);border-radius:6px;cursor:pointer}
 .tb:hover{background:var(--line);color:var(--ink)}
 .tb.on{background:var(--accent-soft);color:var(--accent)}
+.tb[title="More list options"]{min-width:18px;padding:0 4px;margin-left:-3px}
 .wbody{position:relative;flex:1;min-height:0;container-type:size;display:flex;flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden}
 .wbody.flush{padding:0;gap:0}
 .resize{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;z-index:2;
@@ -135,6 +136,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Image */
 .imgwrap{flex:1;min-height:0;display:flex}
+.music-frame{flex:1;width:100%;min-height:0;border:0;display:block}
 .imgwrap img{width:100%;height:100%;object-fit:contain;display:block}
 .dz{flex:1;margin:10px;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:10px;color:var(--muted)}
 
@@ -299,7 +301,8 @@ const TYPES={
   picker:{label:'Names and groups',desc:'Pick a name, make partners or groups',w:.44,h:.44,data:()=>({classId:S.classes[0]?S.classes[0].id:null,mode:'one',size:3,used:[],result:null}),build:buildPicker},
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
-  agenda:{label:'Agenda',desc:'Schedule with a live marker',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda}
+  agenda:{label:'Agenda',desc:'Schedule with a live marker',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
+  music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic}
 };
 
 /* Fill in missing fields so saved or imported data is safe to render. */
@@ -529,7 +532,9 @@ function buildText(w,body,tools){
   tools.append(
     tbtn('B','Bold',()=>cmd('bold')),
     tbtn('I','Italic',()=>cmd('italic')),
-    tbtn('List \u25BE','Bullets or numbers',e=>{
+    /* List turns bullets on or off. The arrow opens a menu to pick bullets or numbers. */
+    tbtn('List','Bullet list on or off',()=>cmd(document.queryCommandState('insertOrderedList')?'insertOrderedList':'insertUnorderedList')),
+    tbtn('\u25BE','More list options',e=>{
       /* Keep the text selection so the list applies to what was selected. */
       const sel=getSelection(),rg=sel.rangeCount&&ed.contains(sel.anchorNode)?sel.getRangeAt(0):null;
       const pick=c=>()=>{closePop();ed.focus();if(rg){sel.removeAllRanges();sel.addRange(rg);}cmd(c);};
@@ -597,6 +602,52 @@ function buildImage(w,body,tools,el){
         h('div',null,'Drop an image here, or click this widget and paste it.'),
         h('button',{class:'btn',type:'button',onclick:()=>file.click()},'Choose image')));
     }
+  }
+  draw();
+}
+
+/* ---------- Music ---------- */
+/* Turns a Spotify or YouTube share link into the address of its embedded player. */
+function embedURL(raw){
+  let u;try{u=new URL(String(raw).trim());}catch(e){return null;}
+  const host=u.hostname.replace(/^(www|m|music)\./,'');
+  if(host==='open.spotify.com'){
+    const m=u.pathname.match(/(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]+)/);
+    return m?'https://open.spotify.com/embed/'+m[1]+'/'+m[2]:null;
+  }
+  const list=u.searchParams.get('list');
+  let id=null;
+  if(host==='youtu.be') id=u.pathname.slice(1).split('/')[0];
+  else if(host==='youtube.com'||host==='youtube-nocookie.com'){
+    const m=u.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]+)/);
+    id=m?m[1]:u.searchParams.get('v');
+  }else return null;
+  if(id&&id!=='videoseries') return 'https://www.youtube-nocookie.com/embed/'+id+(list?'?list='+encodeURIComponent(list):'');
+  return list?'https://www.youtube-nocookie.com/embed/videoseries?list='+encodeURIComponent(list):null;
+}
+function buildMusic(w,body,tools){
+  body.classList.add('flush');
+  const changeB=tbtn('Change','Use a different link',()=>{w.data.url='';save();draw();});
+  tools.append(changeB);
+  function draw(){
+    const src=w.data.url&&embedURL(w.data.url);
+    changeB.hidden=!src;
+    if(src){
+      body.replaceChildren(h('iframe',{class:'music-frame',src,title:'Music player',loading:'lazy',
+        allow:'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture',allowfullscreen:true,referrerpolicy:'strict-origin-when-cross-origin'}));
+      return;
+    }
+    const fld=h('input',{class:'fld',placeholder:'Paste a Spotify or YouTube link','aria-label':'Spotify or YouTube link'});
+    const err=h('div',{class:'cl-count'});
+    const go=()=>{
+      if(!embedURL(fld.value)){err.textContent='That link did not work. Use Share, then Copy link, in Spotify or YouTube.';return;}
+      w.data.url=fld.value.trim();save();draw();
+    };
+    fld.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+    fld.addEventListener('paste',()=>setTimeout(()=>{if(embedURL(fld.value))go();},0));
+    body.replaceChildren(h('div',{class:'dz'},
+      h('div',null,'Paste a link to a song, playlist, album, or video.'),
+      fld,h('button',{class:'btn',type:'button',onclick:go},'Play'),err));
   }
   draw();
 }
