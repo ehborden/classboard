@@ -212,9 +212,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pop .opt{display:flex;flex-direction:column;align-items:flex-start;border:1px solid transparent;background:transparent;border-radius:8px;padding:7px 9px;cursor:pointer;text-align:left;width:100%}
 .pop .opt:hover{background:var(--panel2)}
 .pop .opt small{color:var(--muted)}
-.pop .opt-row{flex-direction:row;align-items:center;gap:10px}
-.opt-ic{flex:none;width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
-.opt-txt{display:flex;flex-direction:column;min-width:0}
+.opt-ic{flex:none;width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.wgrid{display:grid;grid-template-columns:repeat(3,96px);gap:8px}
+.wtile{width:96px;height:92px;border:1px solid var(--line);border-radius:10px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 4px;text-align:center;font-weight:600;line-height:1.15;cursor:pointer}
+.wtile:hover,.wtile:focus-visible{border-color:var(--accent);background:var(--panel2)}
 .pop p{margin:0;color:var(--muted);font-size:13px}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
@@ -1346,14 +1347,16 @@ const ICONS={
 };
 function icon(k){
   const i=h('span',{class:'opt-ic','aria-hidden':'true'});
-  i.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[k]||'')+'</svg>';
+  i.innerHTML='<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[k]||'')+'</svg>';
   return i;
 }
+/* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
+const MENU=['clock','timer','agenda','picker','steps','text','image','seats','music'];
 function addPop(anchor){
   openPop(anchor,box=>{
-    box.append(h('h3',null,'Add a widget'),...Object.keys(TYPES).map(k=>
-      h('button',{class:'opt opt-row',type:'button',onclick:()=>{closePop();addWidget(k);}},icon(k),
-        h('span',{class:'opt-txt'},TYPES[k].label,h('small',null,TYPES[k].desc)))));
+    box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
+      h('button',{class:'wtile',type:'button',title:TYPES[k].desc,'aria-label':TYPES[k].label+'. '+TYPES[k].desc,onclick:()=>{closePop();addWidget(k);}},
+        icon(k),h('span',null,TYPES[k].label)))));
   });
 }
 function addWidget(type){
