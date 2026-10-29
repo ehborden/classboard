@@ -71,6 +71,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
 .btn.danger,.tb.danger{background:var(--danger);border-color:var(--danger);color:var(--on-danger)}
 .btn.big{padding:9px 18px;font-size:15px}
+.btn.icon{display:inline-grid;place-items:center;padding:7px 9px}
 .lnk{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer}
 .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;cursor:pointer;font-size:12px}
 .chip:hover{background:var(--panel2)}
@@ -227,12 +228,10 @@ button,input,select,textarea{font:inherit;color:inherit}
   <div class="brand">Classboard</div>
   <nav class="tabs" id="tabs" aria-label="Screens"></nav>
   <div class="acts">
-    <button class="btn" id="bScreen" type="button">Screen settings</button>
     <button class="btn" id="bAdd" type="button">Add widget</button>
-    <button class="btn" id="bClasses" type="button">Classes</button>
-    <button class="btn" id="bBackup" type="button">Backup</button>
     <button class="btn" id="bFloat" type="button" title="Open a small clock and timer that stays on top of other windows, like PowerPoint">Float clock</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
+    <button class="btn icon" id="bGear" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
 <main class="board bg-mist" id="board"></main>
@@ -880,6 +879,20 @@ function screenPop(anchor){
   });
 }
 
+/* ---------- Settings menu ---------- */
+function gearPop(anchor){
+  const then=f=>()=>{closePop();f(anchor);};
+  /* The gear toggles its own menu, but from a page it opened (like Backup) it goes back to the menu. */
+  if(popEl&&popFor===anchor&&!popEl.classList.contains('menu')) closePop();
+  openPop(anchor,box=>{
+    box.classList.add('menu');
+    box.append(h('h3',null,'Settings'),
+      h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
+      h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
+      h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')));
+  });
+}
+
 /* ---------- Backup ---------- */
 function downloadBackup(){
   clearTimeout(saveT);flush();
@@ -1071,9 +1084,7 @@ document.addEventListener('keydown',e=>{
 
 /* ---------- Toolbar wiring ---------- */
 $('#bAdd').addEventListener('click',e=>addPop(e.currentTarget));
-$('#bScreen').addEventListener('click',e=>screenPop(e.currentTarget));
-$('#bClasses').addEventListener('click',()=>openClasses());
-$('#bBackup').addEventListener('click',e=>backupPop(e.currentTarget));
+$('#bGear').addEventListener('click',e=>gearPop(e.currentTarget));
 $('#bFloat').addEventListener('click',floatClock);
 $('#bPresent').addEventListener('click',()=>setPresent(true));
 $('#pPrev').addEventListener('click',()=>go(-1));
