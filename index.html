@@ -9,24 +9,24 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@500..700&display=swap">
 <style>
 /* Layout: toolbar on top, one free-form board below. Widgets are panels placed by fraction of the board, so a screen scales from a laptop to a projector. */
 :root{
-  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
-  --font-body:'Figtree','Segoe UI',system-ui,sans-serif;
-  --bg:#eef1f5; --bar:#ffffff; --ink:#15202b; --muted:#566474;
+  --font-display:'Atkinson Hyperlegible Next','Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
+  --font-body:var(--font-display);
+  --bg:#eef1f5; --bar:#ffffff; --ink:#15202b; --muted:#404c5a;
   --panel:#ffffff; --panel2:#f0f3f7; --line:#d2dae4;
-  --accent:#0b7a75; --accent-ink:#ffffff; --accent-soft:#d7efed;
+  --accent:#085a56; --accent-ink:#ffffff; --accent-soft:#e3f3f1;
   --sun:#f2b01e; --on-sun:#2b1d00; --danger:#b42318; --on-danger:#ffffff;
   --mist:#dce4ed;
   --shadow:0 1px 2px rgba(15,25,35,.08),0 8px 22px rgba(15,25,35,.10);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#9aa9b8;
+    --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#b9c5d1;
     --panel:#1b2530; --panel2:#243141; --line:#314052;
-    --accent:#3cc4bb; --accent-ink:#06211f; --accent-soft:#17403e;
+    --accent:#6fdcd3; --accent-ink:#06211f; --accent-soft:#143836;
     --sun:#f5be3a; --on-sun:#2b1d00; --danger:#ff8a80; --on-danger:#3a0a06;
     --mist:#0b1117;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
@@ -34,9 +34,9 @@
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#9aa9b8;
+  --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#b9c5d1;
   --panel:#1b2530; --panel2:#243141; --line:#314052;
-  --accent:#3cc4bb; --accent-ink:#06211f; --accent-soft:#17403e;
+  --accent:#6fdcd3; --accent-ink:#06211f; --accent-soft:#143836;
   --sun:#f5be3a; --on-sun:#2b1d00; --danger:#ff8a80; --on-danger:#3a0a06;
   --mist:#0b1117;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
@@ -46,7 +46,7 @@
 html,body{height:100%}
 body{
   margin:0; background:var(--bg); color:var(--ink);
-  font:14px/1.4 var(--font-body);
+  font:500 14px/1.4 var(--font-body);
   display:flex; flex-direction:column; gap:10px;
   padding-block:12px;
   padding-left:max(16px,env(safe-area-inset-left,0px));
@@ -128,8 +128,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 .timer .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .widget.done .wbody{background:var(--sun);color:var(--on-sun)}
 .widget.done .prog i{background:var(--on-sun)}
-@media (prefers-reduced-motion: no-preference){.widget.done{animation:flash 1s ease-in-out infinite}}
-@keyframes flash{50%{box-shadow:0 0 0 7px var(--sun)}}
 
 /* Text */
 .ed{flex:1;min-height:0;overflow:auto;outline:none;padding:12px 14px;line-height:1.3;overflow-wrap:anywhere}
@@ -151,7 +149,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-title:hover,.ag-title:focus{background:var(--panel2)}
 .ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:clamp(13px,4.4cqw,22px)}
 .ag-row{display:grid;grid-template-columns:24px auto minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
-.ag-row.now{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.ag-row.now{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.ag-row.now .ag-txt,.ag-row.now .ag-time{font-weight:700}
+.present .ag-row.out{display:none}
+.present .ag-row.now{font-size:1.5em}
 .ag-row.done .ag-txt,.ag-row.done .ag-time{text-decoration:line-through;color:var(--muted)}
 .ag-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);background:transparent;cursor:pointer;padding:0}
 .ag-chk.on{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 3px var(--panel)}
@@ -161,6 +162,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-time:hover,.ag-txt:hover,.ag-time:focus,.ag-txt:focus{background:var(--panel)}
 .ag-rm{border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;width:22px;height:22px;padding:0}
 .ag-rm:hover{background:var(--line);color:var(--ink)}
+.tb:disabled{opacity:.45;cursor:default}
+.st-list{flex:1;min-height:0;overflow:auto;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:clamp(14px,5.2cqw,34px)}
+.st-row{display:grid;grid-template-columns:1.3em 1.3em minmax(0,1fr) auto;align-items:center;gap:.35em;padding:.15em .25em;border-radius:8px}
+.st-n{font-weight:600;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.st-chk{width:1.2em;height:1.2em;border-radius:6px;border:2px solid var(--ink);background:transparent;cursor:pointer;padding:0;display:grid;place-items:center;color:var(--ink)}
+.st-txt{border:0;background:transparent;padding:.15em .25em;border-radius:6px;font-size:inherit;min-width:0;width:100%}
+.st-txt:hover,.st-txt:focus{background:var(--panel2)}
+.st-row.cur{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.st-row.cur .st-txt{font-weight:700}
+.st-row.done .st-txt{text-decoration:line-through;text-decoration-thickness:.08em}
 
 /* Picker */
 .picker{gap:8px}
@@ -219,6 +230,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pbar span{padding:0 8px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .present .pbar{display:flex}
 .present .bar,.present .whead,.present .resize,.present .ag-rm{display:none}
+.present .st-txt{pointer-events:none}
 .present .ag-title,.present .ag-time,.present .ag-txt{pointer-events:auto}
 
 /* Phone: widgets stack in one column */
@@ -303,6 +315,7 @@ function seed(){
 const TYPES={
   clock:{label:'Clock',desc:'Time and date',w:.22,h:.24,data:()=>({h24:false,sec:false,date:true}),build:buildClock},
   timer:{label:'Timer',desc:'Countdown with a bell',w:.24,h:.52,data:()=>({dur:300}),build:buildTimer},
+  steps:{label:'Task steps',desc:'Up to five steps to check off',w:.40,h:.50,data:()=>({title:'Steps',items:[{id:uid(),txt:'',done:false}]}),build:buildSteps},
   picker:{label:'Names and groups',desc:'Pick a name, make partners or groups',w:.44,h:.44,data:()=>({classId:S.classes[0]?S.classes[0].id:null,mode:'one',size:3,used:[],result:null}),build:buildPicker},
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
@@ -496,7 +509,7 @@ function buildTimer(w,body,tools,el){
     h('button',{class:'chip',type:'button',title:'One minute less','aria-label':'One minute less',onclick:()=>setDur(w.data.dur-60)},'-1'),
     h('button',{class:'chip',type:'button',title:'One minute more','aria-label':'One minute more',onclick:()=>setDur(w.data.dur+60)},'+1'));
   function finish(){
-    rt.running=false;rt.left=0;rt.done=true;el.classList.add('done');beep();
+    rt.running=false;rt.left=0;rt.done=true;el.classList.add('done');if(w.data.bell)beep();
   }
   function draw(){
     let left=rt.running?(rt.endAt-Date.now())/1000:rt.left;
@@ -521,7 +534,8 @@ function buildTimer(w,body,tools,el){
   start.addEventListener('click',rt.toggle);
   reset.addEventListener('click',()=>{rt.running=false;rt.left=w.data.dur;rt.done=false;el.classList.remove('done');draw();});
   body.append(dial,disp,prog,msg,h('div',{class:'row'},start,reset),presets);
-  tools.append(tog('Dial','Show the dial, or numbers and a bar',()=>w.data.view!=='bar',v=>{w.data.view=v?'dial':'bar';draw();}));
+  tools.append(tog('Bell','Ring a bell when time is up. Off by default.',()=>!!w.data.bell,v=>{w.data.bell=v;}),
+    tog('Dial','Show the dial, or numbers and a bar',()=>w.data.view!=='bar',v=>{w.data.view=v?'dial':'bar';draw();}));
   if(rt.done) el.classList.add('done');
   draw();ticks.push(draw);
 }
@@ -704,6 +718,9 @@ function buildAgenda(w,body,tools){
     let best=null;
     [...list.children].forEach(r=>{r.classList.remove('now');if(r._it.t&&r._it.t<=hm&&(!best||r._it.t>=best._it.t))best=r;});
     if(best) best.classList.add('now');
+    /* Present mode shows only the current row and the next two. Before the first start time, it shows the first three. */
+    const rows=[...list.children],i=best?rows.indexOf(best):0;
+    rows.forEach((r,k)=>r.classList.toggle('out',k<i||k>i+2));
   }
   tools.append(
     tbtn('+ Row','Add a row',()=>{
@@ -715,6 +732,43 @@ function buildAgenda(w,body,tools){
     })
   );
   drawList();ticks.push(mark);
+}
+
+/* ---------- Task steps ---------- */
+/* Five steps at most. The first unchecked step is the current one and shows in bold.
+   Checked steps get a check mark and a strikethrough but keep full contrast, so they stay readable. */
+const MAX_STEPS=5;
+const ICON_CHECK='<svg viewBox="0 0 24 24" width="70%" height="70%" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function buildSteps(w,body,tools){
+  const D=w.data;
+  const title=h('input',{class:'ag-title',value:D.title||'','aria-label':'Checklist title'});
+  title.addEventListener('input',()=>{D.title=title.value;save();});
+  const list=h('ol',{class:'st-list'});
+  body.append(title,list);
+  const addB=tbtn('+ Step','Add a step',()=>{
+    if(D.items.length>=MAX_STEPS)return;
+    const it={id:uid(),txt:'',done:false};D.items.push(it);save();draw();
+    const r=list.lastChild;if(r)r._tx.focus();
+  });
+  tools.append(addB,tbtn('Reset','Uncheck every step',()=>{D.items.forEach(i=>{i.done=false;});save();draw();}));
+  function draw(){
+    const cur=D.items.find(i=>!i.done);
+    list.replaceChildren(...D.items.map((it,k)=>{
+      const chk=h('button',{class:'st-chk'+(it.done?' on':''),type:'button','aria-label':'Step '+(k+1)+' done','aria-pressed':String(!!it.done)});
+      if(it.done) chk.innerHTML=ICON_CHECK;
+      const tx=h('input',{class:'st-txt',value:it.txt||'',placeholder:'Step '+(k+1),'aria-label':'Step '+(k+1)});
+      const rm=h('button',{class:'ag-rm st-rm',type:'button',title:'Delete step','aria-label':'Delete step'},'\u00d7');
+      const r=h('li',{class:'st-row'+(it.done?' done':'')+(it===cur?' cur':'')},h('span',{class:'st-n'},String(k+1)),chk,tx,rm);
+      chk.addEventListener('click',()=>{it.done=!it.done;save();draw();});
+      tx.addEventListener('input',()=>{it.txt=tx.value;save();});
+      rm.addEventListener('click',()=>{D.items=D.items.filter(i=>i!==it);save();draw();});
+      r._tx=tx;
+      return r;
+    }));
+    addB.disabled=D.items.length>=MAX_STEPS;
+    addB.title=addB.disabled?'Five steps is the most':'Add a step';
+  }
+  draw();
 }
 
 /* ---------- Names, partners, groups ---------- */
@@ -1064,7 +1118,7 @@ async function floatClock(){
   const fl=d.createElement('link');fl.rel='stylesheet';fl.href=$('link[rel="stylesheet"]').href;
   const st=d.createElement('style');
   st.textContent='html,body{height:100%;margin:0}*{box-sizing:border-box}'+
-    'body{display:flex;flex-direction:column;gap:6px;padding:10px 12px;overflow:hidden;background:'+v('--panel')+';color:'+v('--ink')+';font-family:'+v('--font-display')+'}'+
+    'body{display:flex;flex-direction:column;gap:6px;font-weight:500;padding:10px 12px;overflow:hidden;background:'+v('--panel')+';color:'+v('--ink')+';font-family:'+v('--font-display')+'}'+
     '.dial{flex:1;min-height:0;display:flex;justify-content:center}.dial svg{height:100%;max-width:100%}'+
     '.bot{display:flex;align-items:center;justify-content:space-between;gap:8px}'+
     '.time{font-weight:700;font-size:min(13vw,10vh);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}'+
@@ -1098,7 +1152,7 @@ async function floatClock(){
     const rt=rtOf(w);
     let left=rt.running?(rt.endAt-Date.now())/1000:rt.left;
     /* If the timer's screen is not showing, the board cannot ring the bell, so ring it here. */
-    if(rt.running&&left<=0&&!boardEl.querySelector('[data-id="'+w.id+'"]')){rt.running=false;rt.left=0;rt.done=true;beep();}
+    if(rt.running&&left<=0&&!boardEl.querySelector('[data-id="'+w.id+'"]')){rt.running=false;rt.left=0;rt.done=true;if(w.data.bell)beep();}
     if(rt.done) left=0;
     d.body.classList.toggle('done',!!rt.done);
     const svg=dialSVG(left,w.data.dur,Object.assign({done:rt.done},c,rt.done?{ink:v('--on-sun'),panel:v('--sun')}:{}));
