@@ -1320,14 +1320,15 @@ function closePop(){
 function onDocDown(e){
   if(popEl&&!popEl.contains(e.target)&&!(popFor&&popFor.contains(e.target)))closePop();
 }
-function openPop(anchor,fill){
+/* align 'center' centers the popover under its button; the default lines up their left edges. */
+function openPop(anchor,fill,align){
   if(popEl&&popFor===anchor){closePop();return;}
   closePop();
   popEl=h('div',{class:'pop'});popFor=anchor;
   fill(popEl);
   document.body.append(popEl);
   const a=anchor.getBoundingClientRect(),pw=popEl.offsetWidth,ph=popEl.offsetHeight;
-  popEl.style.left=clamp(a.left,16,Math.max(16,window.innerWidth-pw-16))+'px';
+  popEl.style.left=clamp(align==='center'?a.left+a.width/2-pw/2:a.left,16,Math.max(16,window.innerWidth-pw-16))+'px';
   let top=a.bottom+6;
   if(top+ph>window.innerHeight-8) top=Math.max(8,a.top-ph-6);
   popEl.style.top=top+'px';
@@ -1357,7 +1358,7 @@ function addPop(anchor){
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
       h('button',{class:'wtile',type:'button',title:TYPES[k].desc,'aria-label':TYPES[k].label+'. '+TYPES[k].desc,onclick:()=>{closePop();addWidget(k);}},
         icon(k),h('span',null,TYPES[k].label)))));
-  });
+  },'center');
 }
 function addWidget(type){
   const T=TYPES[type],sc=cur(),n=sc.widgets.length;
