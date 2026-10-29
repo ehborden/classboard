@@ -1351,7 +1351,7 @@ function icon(k){
   return i;
 }
 /* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
-const MENU=['clock','timer','agenda','picker','steps','text','image','seats','music'];
+const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music'];
 function addPop(anchor){
   openPop(anchor,box=>{
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
