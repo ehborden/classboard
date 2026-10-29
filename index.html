@@ -9,11 +9,11 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@500..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@500..700&display=swap">
 <style>
 /* Layout: toolbar on top, one free-form board below. Widgets are panels placed by fraction of the board, so a screen scales from a laptop to a projector. */
 :root{
-  --font-display:'Atkinson Hyperlegible Next','Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
+  --font-display:'Source Sans 3','Segoe UI',system-ui,sans-serif;
   --font-body:var(--font-display);
   --bg:#eef1f5; --bar:#ffffff; --ink:#15202b; --muted:#404c5a;
   --panel:#ffffff; --panel2:#f0f3f7; --line:#d2dae4;
@@ -57,7 +57,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Toolbar */
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.brand{font:700 18px var(--font-display);letter-spacing:-.01em}
+.brand{font:700 18px var(--font-display);letter-spacing:-.01em;border:1px solid transparent;background:transparent;border-radius:8px;padding:2px 6px;margin-left:-7px;max-width:40vw;min-width:0}
+.brand:hover{border-color:var(--line)}
+.brand:focus{border-color:var(--accent);background:var(--panel)}
 .tabs{flex:1 1 220px;min-width:0;display:flex;gap:4px;overflow-x:auto;padding:2px}
 .tab{flex:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 14px;cursor:pointer;white-space:nowrap}
 .tab:hover{background:var(--panel2)}
@@ -147,12 +149,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .agenda{gap:6px}
 .ag-title{border:0;background:transparent;font:700 min(7cqw,20px) var(--font-display);padding:2px 4px;width:100%;border-radius:6px}
 .ag-title:hover,.ag-title:focus{background:var(--panel2)}
-.ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:clamp(13px,4.4cqw,22px)}
+.ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:max(var(--min-text,0px),clamp(13px,4.4cqw,22px))}
 .ag-row{display:grid;grid-template-columns:24px auto minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
 .ag-row.now{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
 .ag-row.now .ag-txt,.ag-row.now .ag-time{font-weight:700}
 .present .ag-row.out{display:none}
-.present .ag-row.now{font-size:1.5em}
+.present .ag-row.now{font-size:max(var(--min-now),1.5em)}
 .ag-row.done .ag-txt,.ag-row.done .ag-time{text-decoration:line-through;color:var(--muted)}
 .ag-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);background:transparent;cursor:pointer;padding:0}
 .ag-chk.on{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 3px var(--panel)}
@@ -163,7 +165,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-rm{border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;width:22px;height:22px;padding:0}
 .ag-rm:hover{background:var(--line);color:var(--ink)}
 .tb:disabled{opacity:.45;cursor:default}
-.st-list{flex:1;min-height:0;overflow:auto;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:clamp(14px,5.2cqw,34px)}
+.st-list{flex:1;min-height:0;overflow:auto;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:max(var(--min-text,0px),clamp(14px,5.2cqw,34px))}
 .st-row{display:grid;grid-template-columns:1.3em 1.3em minmax(0,1fr) auto;align-items:center;gap:.35em;padding:.15em .25em;border-radius:8px}
 .st-n{font-weight:600;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .st-chk{width:1.2em;height:1.2em;border-radius:6px;border:2px solid var(--ink);background:transparent;cursor:pointer;padding:0;display:grid;place-items:center;color:var(--ink)}
@@ -227,8 +229,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* Present mode */
 .pbar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:900;gap:6px;align-items:center;background:var(--bar);border:1px solid var(--line);border-radius:999px;padding:4px 6px;box-shadow:var(--shadow);opacity:.35;transition:opacity .2s}
 .pbar:hover,.pbar:focus-within{opacity:1}
+.calm *,.calm *::before,.calm *::after{transition:none!important;animation:none!important}
+.calm-clock{position:absolute;right:2%;bottom:3%;z-index:50;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:.25em .6em;font:700 max(4vh,28px)/1 var(--font-display);box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
 .pbar span{padding:0 8px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .present .pbar{display:flex}
+/* Back-row sizing for a room up to 20 feet deep, on a 1080-pixel-tall projected image:
+   body text about 1.3 px per foot (26px = 2.4vh) and the agenda now-line about 3.3 px per foot (66px = 6vh). */
+.present{--min-text:2.4vh;--min-now:6vh}
 .present .bar,.present .whead,.present .resize,.present .ag-rm{display:none}
 .present .st-txt{pointer-events:none}
 .present .ag-title,.present .ag-time,.present .ag-txt{pointer-events:auto}
@@ -245,7 +252,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 </style>
 
 <header class="bar" id="bar">
-  <div class="brand">Classboard</div>
+  <input class="brand" id="brand" aria-label="Board name" title="Click to rename this board" spellcheck="false" autocomplete="off">
   <nav class="tabs" id="tabs" aria-label="Screens"></nav>
   <div class="acts">
     <button class="btn" id="bAdd" type="button">Add widget</button>
@@ -259,6 +266,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <button class="btn" id="pPrev" type="button" aria-label="Previous screen">Prev</button>
   <span id="pName"></span>
   <button class="btn" id="pNext" type="button" aria-label="Next screen">Next</button>
+  <button class="btn" id="pCalm" type="button" title="Calm mode: no sound, motion, or music" aria-pressed="false">Calm</button>
   <button class="btn" id="pExit" type="button">Exit</button>
 </div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -295,20 +303,18 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
 let S=null;
 try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){S=null;}
 
+/* Default layout from the display guidelines: clock and timer in the left 22%,
+   one content panel in the center 65%, and the right side left empty. */
+function guideWidgets(html){
+  const W=(type,x,y,w,hh,z,data)=>({id:uid(),type,x,y,w,h:hh,z,data});
+  return [
+    W('clock',.02,.03,.20,.22,1,{h24:false,sec:false,date:true}),
+    W('timer',.02,.28,.20,.62,2,{dur:300}),
+    W('text',.25,.03,.63,.87,3,{html:html||'',fs:44})];
+}
 function seed(){
   const cls={id:uid(),name:'Sample class',students:['Ada','Ben','Chloe','Dev','Elena','Femi','Grace','Hiro','Isla','Jamal'],absent:[]};
-  const W=(type,x,y,w,hh,z,data)=>({id:uid(),type,x,y,w,h:hh,z,data});
-  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:[
-    W('clock',.02,.03,.22,.24,1,{h24:false,sec:false,date:true}),
-    W('timer',.02,.30,.22,.44,2,{dur:300}),
-    W('text',.27,.03,.46,.40,3,{html:'<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.',fs:32}),
-    W('picker',.27,.47,.46,.46,4,{classId:cls.id,mode:'one',size:3,used:[],result:null}),
-    W('agenda',.76,.03,.22,.60,5,{title:'Today',items:[
-      {id:uid(),t:'08:30',txt:'Do now',done:false},
-      {id:uid(),t:'08:40',txt:'Mini lesson',done:false},
-      {id:uid(),t:'09:05',txt:'Practice',done:false},
-      {id:uid(),t:'09:30',txt:'Share out',done:false}]})
-  ]};
+  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.')};
   return {v:1,active:sc.id,classes:[cls],screens:[sc]};
 }
 
@@ -391,6 +397,12 @@ function renderBoard(){
   boardEl.className='board bg-'+sc.bg;
   boardEl.replaceChildren();
   [...sc.widgets].sort((a,b)=>a.y-b.y||a.x-b.x).forEach(w=>boardEl.append(renderWidget(w)));
+  /* Calm mode always keeps the time on the board. */
+  if(S.calm&&!sc.widgets.some(w=>w.type==='clock')){
+    const c=h('div',{class:'calm-clock','aria-label':'Time'});
+    const draw=()=>{const n=new Date();c.textContent=n.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});};
+    draw();ticks.push(draw);boardEl.append(c);
+  }
   if(!sc.widgets.length){
     boardEl.append(h('div',{class:'empty'},h('p',null,'This screen is empty.'),
       h('button',{class:'btn primary',type:'button',onclick:e=>addPop(e.currentTarget)},'Add a widget')));
@@ -478,6 +490,7 @@ function ensureAudio(){
   try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}
 }
 function beep(){
+  if(S.calm)return;
   ensureAudio();if(!AC)return;
   [0,.4,.8].forEach(d=>{
     const o=AC.createOscillator(),g=AC.createGain(),t0=AC.currentTime+d;
@@ -544,7 +557,7 @@ function buildTimer(w,body,tools,el){
 function buildText(w,body,tools){
   const ed=h('div',{class:'ed',contenteditable:'true',spellcheck:'true','data-ph':'Type here. Select text, then use B, I, or List above.','aria-label':'Text box'});
   ed.innerHTML=w.data.html||'';
-  ed.style.fontSize=w.data.fs+'px';
+  ed.style.fontSize='max(var(--min-text,0px),'+w.data.fs+'px)';
   const sync=()=>{w.data.html=ed.innerHTML;save();};
   ed.addEventListener('input',sync);
   ed.addEventListener('paste',e=>{
@@ -552,7 +565,7 @@ function buildText(w,body,tools){
     e.preventDefault();document.execCommand('insertText',false,t);
   });
   const cmd=c=>{ed.focus();document.execCommand(c);sync();};
-  const size=d=>{w.data.fs=clamp(w.data.fs+d,14,140);ed.style.fontSize=w.data.fs+'px';save();};
+  const size=d=>{w.data.fs=clamp(w.data.fs+d,14,140);ed.style.fontSize='max(var(--min-text,0px),'+w.data.fs+'px)';save();};
   body.classList.add('flush');
   body.append(ed);
   tools.append(
@@ -653,6 +666,7 @@ function embedURL(raw){
 }
 function buildMusic(w,body,tools){
   body.classList.add('flush');
+  if(S.calm){body.append(h('div',{class:'dz'},'Music is off in calm mode.'));return;}
   let editing=false;
   const changeB=tbtn('Change','Use a different link',()=>{editing=true;draw();});
   tools.append(changeB);
@@ -802,7 +816,7 @@ function buildPicker(w,body,tools,el){
     if(!left.length){D.used=[];left=pool.slice();wrapped=true;}
     const final=left[Math.floor(Math.random()*left.length)];
     const finish=()=>{D.used.push(final);D.result=final;save();go.disabled=false;draw();if(wrapped)toast('Everyone has been picked. Starting a new round.');};
-    if(reduce){finish();return;}
+    if(reduce||S.calm){finish();return;}
     const nameEl=h('div',{class:'pk-name'});
     out.replaceChildren(nameEl);go.disabled=true;
     let i=0;
@@ -1028,9 +1042,30 @@ function gearPop(anchor){
     box.append(h('h3',null,'Settings'),
       h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
       h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
-      h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')));
+      h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')),
+      h('button',{class:'opt',type:'button','aria-pressed':String(!!S.calm),onclick:()=>{closePop();setCalm(!S.calm);}},'Calm mode: '+(S.calm?'on':'off'),h('small',null,'No sound, motion, or music. The clock stays.')));
   });
 }
+
+/* ---------- Calm mode ---------- */
+function setCalm(on){
+  S.calm=!!on;save();
+  document.body.classList.toggle('calm',S.calm);
+  const b=$('#pCalm');b.classList.toggle('primary',S.calm);b.setAttribute('aria-pressed',String(S.calm));
+  renderBoard();
+  toast(S.calm?'Calm mode is on. No sound, motion, or music.':'Calm mode is off.');
+}
+
+/* ---------- Board name ---------- */
+const brandEl=$('#brand');
+function syncBrand(){
+  brandEl.value=S.title||'Classboard';
+  brandEl.size=Math.max(4,brandEl.value.length+1);
+  document.title=S.title||'Classboard';
+}
+brandEl.addEventListener('input',()=>{S.title=brandEl.value;brandEl.size=Math.max(4,brandEl.value.length+1);document.title=S.title||'Classboard';save();});
+brandEl.addEventListener('keydown',e=>{if(e.key==='Enter')brandEl.blur();});
+brandEl.addEventListener('blur',()=>{if(!brandEl.value.trim()){S.title='';save();syncBrand();}});
 
 /* ---------- Backup ---------- */
 function downloadBackup(){
@@ -1066,7 +1101,7 @@ function backupPop(anchor){
         const n=(k,one,many)=>k+' '+(k===1?one:many);
         const go=h('button',{class:'btn danger',type:'button',onclick:()=>{
           S=D;Object.keys(RT).forEach(k=>delete RT[k]);
-          closePop();renderTabs();renderBoard();
+          closePop();syncBrand();document.body.classList.toggle('calm',!!S.calm);renderTabs();renderBoard();
           clearTimeout(saveT);
           if(flush()) toast('Backup imported.');
         }},'Replace my boards');
@@ -1172,7 +1207,7 @@ function renderTabs(){
   tabsEl.replaceChildren(...S.screens.map(sc=>
     h('button',{class:'tab'+(sc.id===S.active?' on':''),type:'button','aria-pressed':String(sc.id===S.active),onclick:()=>switchTo(sc.id)},sc.name||'Untitled')),
     h('button',{class:'tab add',type:'button',title:'New screen','aria-label':'New screen',onclick:()=>{
-      const sc={id:uid(),name:'Screen '+(S.screens.length+1),bg:cur().bg,widgets:[]};
+      const sc={id:uid(),name:'Screen '+(S.screens.length+1),bg:cur().bg,widgets:guideWidgets()};
       S.screens.push(sc);switchTo(sc.id);
     }},'+'));
   const on=$('.tab.on',tabsEl);if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
@@ -1229,7 +1264,10 @@ $('#bPresent').addEventListener('click',()=>setPresent(true));
 $('#pPrev').addEventListener('click',()=>go(-1));
 $('#pNext').addEventListener('click',()=>go(1));
 $('#pExit').addEventListener('click',()=>setPresent(false));
+$('#pCalm').addEventListener('click',()=>setCalm(!S.calm));
 
+syncBrand();
+if(S.calm){document.body.classList.add('calm');$('#pCalm').classList.add('primary');$('#pCalm').setAttribute('aria-pressed','true');}
 renderTabs();
 renderBoard();
 })();
