@@ -231,6 +231,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <button class="btn" id="bAdd" type="button">Add widget</button>
     <button class="btn" id="bClasses" type="button">Classes</button>
     <button class="btn" id="bBackup" type="button">Backup</button>
+    <button class="btn" id="bFloat" type="button" title="Open a small clock that stays on top of other windows, like PowerPoint">Float clock</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
   </div>
 </header>
@@ -929,6 +930,36 @@ function backupPop(anchor){
   });
 }
 
+/* ---------- Floating clock (Document Picture-in-Picture, Chrome and Edge) ---------- */
+let pipWin=null;
+async function floatClock(){
+  if(pipWin){pipWin.close();return;}
+  if(!('documentPictureInPicture' in window)){toast('This browser cannot float a clock. Use Chrome or Edge.');return;}
+  try{pipWin=await documentPictureInPicture.requestWindow({width:280,height:120});}
+  catch(e){toast('Could not open the floating clock.');return;}
+  const d=pipWin.document,cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  d.title='Clock';
+  const fl=d.createElement('link');fl.rel='stylesheet';fl.href=$('link[rel="stylesheet"]').href;
+  const st=d.createElement('style');
+  st.textContent='html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;overflow:hidden;'+
+    'background:'+v('--panel')+';color:'+v('--ink')+';font-family:'+v('--font-display')+'}'+
+    '.time{font-weight:700;font-size:min(30vw,72vh);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}'+
+    '.ampm{font-size:.34em;font-weight:600;margin-left:.2em;color:'+v('--muted')+';letter-spacing:0}';
+  d.head.append(fl,st);
+  const t=d.createElement('div');t.className='time';d.body.append(t);
+  const cw=S.screens.flatMap(s=>s.widgets).find(w=>w.type==='clock');
+  const draw=()=>{
+    const n=new Date(),h24=cw&&cw.data.h24;
+    let hh=n.getHours(),ap='';
+    if(!h24){ap=hh>=12?'PM':'AM';hh=hh%12||12;}else hh=String(hh).padStart(2,'0');
+    t.replaceChildren(hh+':'+String(n.getMinutes()).padStart(2,'0'),ap?h('span',{class:'ampm'},ap):'');
+  };
+  draw();
+  const iv=setInterval(draw,1000);
+  $('#bFloat').textContent='Close float';
+  pipWin.addEventListener('pagehide',()=>{clearInterval(iv);pipWin=null;$('#bFloat').textContent='Float clock';});
+}
+
 /* ---------- Screens ---------- */
 const tabsEl=$('#tabs');
 function renderTabs(){
@@ -989,6 +1020,7 @@ $('#bAdd').addEventListener('click',e=>addPop(e.currentTarget));
 $('#bScreen').addEventListener('click',e=>screenPop(e.currentTarget));
 $('#bClasses').addEventListener('click',()=>openClasses());
 $('#bBackup').addEventListener('click',e=>backupPop(e.currentTarget));
+$('#bFloat').addEventListener('click',floatClock);
 $('#bPresent').addEventListener('click',()=>setPresent(true));
 $('#pPrev').addEventListener('click',()=>go(-1));
 $('#pNext').addEventListener('click',()=>go(1));
