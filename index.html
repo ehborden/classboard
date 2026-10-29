@@ -132,6 +132,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .dialbox svg{height:100%;max-width:100%;font-family:var(--font-display)}
 .timer:not(.dialmode) .dialbox,.timer.dialmode .t,.timer.dialmode .prog,.timer.dialmode .tmsg{display:none}
 .timer .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.timer .tin{width:4.2em;text-align:center;cursor:text}
+.timer .tin:focus{outline:2px solid var(--accent);background:var(--panel)}
 .widget.done .wbody{background:var(--sun);color:var(--on-sun)}
 .widget.done .prog i{background:var(--on-sun)}
 
@@ -338,18 +340,22 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
 let S=null;
 try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){S=null;}
 
-/* Default layout from the display guidelines: clock and timer in the left 22%,
-   one content panel in the center 65%, and the right side left empty. */
-function guideWidgets(html){
+/* Default layout: agenda on the left, text box in the center, clock and timer stacked on the right. */
+function guideWidgets(html,items){
   const W=(type,x,y,w,hh,z,data)=>({id:uid(),type,x,y,w,h:hh,z,data});
   return [
-    W('clock',.02,.03,.20,.22,1,{h24:false,sec:false,date:true}),
-    W('timer',.02,.28,.20,.62,2,{dur:300}),
-    W('text',.25,.03,.63,.87,3,{html:html||'',fs:44})];
+    W('agenda',.02,.02,.22,.62,1,{title:'Today',items:items||[]}),
+    W('text',.255,.02,.47,.44,2,{html:html||'',fs:44}),
+    W('clock',.77,.03,.22,.27,3,{h24:false,sec:false,date:true}),
+    W('timer',.745,.34,.25,.63,4,{dur:300})];
 }
 function seed(){
   const cls={id:uid(),name:'Sample class',students:['Ada','Ben','Chloe','Dev','Elena','Femi','Grace','Hiro','Isla','Jamal'],absent:[]};
-  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.')};
+  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.',[
+    {id:uid(),t:'08:30',txt:'Do now',done:false},
+    {id:uid(),t:'08:40',txt:'Mini lesson',done:false},
+    {id:uid(),t:'09:05',txt:'Practice',done:false},
+    {id:uid(),t:'09:30',txt:'Share out',done:false}])};
   return {v:1,active:sc.id,classes:[cls],screens:[sc]};
 }
 
@@ -563,8 +569,18 @@ function buildTimer(w,body,tools,el){
     rt.running=false;rt.left=w.data.dur;rt.done=false;el.classList.remove('done');
     save();draw();
   };
+  /* Typed times accept minutes ("7" or "2.5") or minutes and seconds ("2:30"). */
+  const typed=h('input',{class:'chip tin',type:'text',inputmode:'decimal',placeholder:'Type','aria-label':'Type a time in minutes, or minutes:seconds',title:'Type minutes, like 7 or 2:30, then press Enter'});
+  const takeTyped=()=>{
+    const v=typed.value.trim();if(!v)return;
+    const m=v.match(/^(\d+):(\d{1,2})$/),sec=m?(+m[1])*60+(+m[2]):parseFloat(v)*60;
+    if(isFinite(sec)&&sec>0)setDur(sec);else toast('Type minutes, like 7 or 2:30.');
+    typed.value='';typed.blur();
+  };
+  typed.addEventListener('keydown',e=>{if(e.key==='Enter')takeTyped();if(e.key==='Escape'){e.stopPropagation();typed.value='';typed.blur();}});
+  typed.addEventListener('change',takeTyped);
   const presets=h('div',{class:'row presets'},
-    [1,5,10,15].map(m=>h('button',{class:'chip',type:'button',onclick:()=>setDur(m*60)},m+' min')),
+    [1,3,5,10].map(m=>h('button',{class:'chip',type:'button',onclick:()=>setDur(m*60)},m+' min')),typed,
     h('button',{class:'chip',type:'button',title:'One minute less','aria-label':'One minute less',onclick:()=>setDur(w.data.dur-60)},'-1'),
     h('button',{class:'chip',type:'button',title:'One minute more','aria-label':'One minute more',onclick:()=>setDur(w.data.dur+60)},'+1'));
   function finish(){
