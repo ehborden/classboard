@@ -1354,7 +1354,10 @@ let pipWin=null;
 async function floatClock(){
   if(pipWin){pipWin.close();return;}
   if(!('documentPictureInPicture' in window)){toast('This browser cannot float a clock. Use Chrome or Edge.');return;}
-  try{pipWin=await documentPictureInPicture.requestWindow({width:260,height:330});}
+  /* Two views: full (dial, clock, play) and small (just the clock). The last one used is remembered. */
+  const SIZES={full:[260,330],mini:[260,90]};
+  let mode=S.floatMode==='mini'?'mini':'full';
+  try{pipWin=await documentPictureInPicture.requestWindow({width:SIZES[mode][0],height:SIZES[mode][1]});}
   catch(e){toast('Could not open the floating clock.');return;}
   const d=pipWin.document,cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
   const c={ink:v('--ink'),accent:v('--accent'),soft:v('--accent-soft'),panel:v('--panel')};
@@ -1369,9 +1372,26 @@ async function floatClock(){
     '.ampm{font-size:.45em;font-weight:600;margin-left:.2em;color:'+v('--muted')+';letter-spacing:0}'+
     '.play{flex:none;width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:'+c.accent+';color:'+v('--accent-ink')+'}'+
     'body.clockonly{justify-content:center}body.clockonly .dial,body.clockonly .play{display:none}body.clockonly .bot{justify-content:center}body.clockonly .time{font-size:min(30vw,40vh)}'+
-    'body.done{background:'+v('--sun')+';color:'+v('--on-sun')+'}';
+    'body.done:not(.mini){background:'+v('--sun')+';color:'+v('--on-sun')+'}'+
+    '.flip{flex:none;border:1px solid '+v('--line')+';background:'+v('--panel2')+';color:'+v('--ink')+';font:600 13px '+v('--font-display')+';border-radius:999px;padding:4px 10px;cursor:pointer}'+
+    'body:not(.mini) .flip{position:absolute;top:8px;right:8px}'+
+    'body.mini{justify-content:center;padding:6px 10px}body.mini .dial,body.mini .play{display:none}body.mini .time{font-size:min(22vw,62vh)}'+
+    'body.clockonly .flip{display:none}';
   d.head.append(fl,st);
-  const dial=h('div',{class:'dial'}),t=h('div',{class:'time'}),play=h('button',{class:'play',type:'button'}),bot=h('div',{class:'bot'},t,play);
+  const dial=h('div',{class:'dial'}),t=h('div',{class:'time'}),play=h('button',{class:'play',type:'button'});
+  const flip=h('button',{class:'flip',type:'button'});
+  const bot=h('div',{class:'bot'},t,play,flip);
+  const setMode=m=>{
+    mode=m;S.floatMode=m;save();
+    d.body.classList.toggle('mini',m==='mini');
+    flip.textContent=m==='mini'?'Timer':'Small';
+    flip.title=m==='mini'?'Show the timer':'Show just the clock';
+  };
+  flip.addEventListener('click',()=>{
+    setMode(mode==='mini'?'full':'mini');
+    try{pipWin.resizeTo(SIZES[mode][0],SIZES[mode][1]);}catch(e){}
+  });
+  setMode(mode);
   d.body.append(dial,bot);
   const cw=S.screens.flatMap(s=>s.widgets).find(w=>w.type==='clock');
   /* The timer shown is the one started most recently, else the first on this screen. */
