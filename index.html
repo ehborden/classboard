@@ -231,7 +231,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <button class="btn" id="bAdd" type="button">Add widget</button>
     <button class="btn" id="bClasses" type="button">Classes</button>
     <button class="btn" id="bBackup" type="button">Backup</button>
-    <button class="btn" id="bFloat" type="button" title="Open a small clock that stays on top of other windows, like PowerPoint">Float clock</button>
+    <button class="btn" id="bFloat" type="button" title="Open a small clock and timer that stays on top of other windows, like PowerPoint">Float clock</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
   </div>
 </header>
@@ -452,7 +452,7 @@ function buildClock(w,body,tools){
 
 /* ---------- Timer ---------- */
 const RT={};
-let AC=null;
+let AC=null,lastTimer=null;
 function ensureAudio(){
   try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}
 }
@@ -498,12 +498,13 @@ function buildTimer(w,body,tools,el){
     start.textContent=rt.running?'Pause':(rt.left<w.data.dur&&!rt.done?'Resume':'Start');
     msg.textContent=rt.done?'Time is up':'';
   }
-  start.addEventListener('click',()=>{
+  rt.toggle=()=>{
     if(rt.done){rt.done=false;rt.left=w.data.dur;el.classList.remove('done');}
     if(rt.running){rt.left=Math.max(0,(rt.endAt-Date.now())/1000);rt.running=false;}
-    else{ensureAudio();if(rt.left<=0)rt.left=w.data.dur;rt.endAt=Date.now()+rt.left*1000;rt.running=true;}
+    else{ensureAudio();if(rt.left<=0)rt.left=w.data.dur;rt.endAt=Date.now()+rt.left*1000;rt.running=true;lastTimer=w.id;}
     draw();
-  });
+  };
+  start.addEventListener('click',rt.toggle);
   reset.addEventListener('click',()=>{rt.running=false;rt.left=w.data.dur;rt.done=false;el.classList.remove('done');draw();});
   body.append(disp,prog,msg,h('div',{class:'row'},start,reset),presets);
   if(rt.done) el.classList.add('done');
@@ -930,32 +931,85 @@ function backupPop(anchor){
   });
 }
 
-/* ---------- Floating clock (Document Picture-in-Picture, Chrome and Edge) ---------- */
+/* ---------- Floating clock and timer (Document Picture-in-Picture, Chrome and Edge) ---------- */
+/* Dial faces: [minutes on the face, minutes between labels]. The smallest face that fits the timer is used. */
+const FACES=[[5,1],[10,2],[15,5],[20,5],[30,5],[60,5],[90,15],[120,15]];
+function dialSVG(left,dur,c){
+  const [max,step]=FACES.find(f=>f[0]>=dur/60)||FACES[FACES.length-1];
+  const P=(r,m)=>{const a=m/max*2*Math.PI;return [(100+r*Math.sin(a)).toFixed(2),(100-r*Math.cos(a)).toFixed(2)];};
+  let s='<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Time left">';
+  for(let m=0;m<max;m+=max<=60?1:5){
+    const big=m%step===0,[x1,y1]=P(big?70:74,m),[x2,y2]=P(79,m);
+    s+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c.ink+'" stroke-width="'+(big?2:1)+'" stroke-linecap="round"/>';
+  }
+  for(let m=0;m<max;m+=step){const [x,y]=P(90,m);s+='<text x="'+x+'" y="'+y+'" font-size="11" text-anchor="middle" dominant-baseline="central" fill="'+c.ink+'">'+m+'</text>';}
+  const f=clamp(left/(max*60),0,1),R=64;
+  s+='<circle cx="100" cy="100" r="'+R+'" fill="'+c.soft+'"/>';
+  if(f>.9999) s+='<circle cx="100" cy="100" r="'+R+'" fill="'+c.accent+'"/>';
+  else if(f>0){const [x,y]=P(R,f*max);s+='<path d="M100 100 L100 '+(100-R)+' A'+R+' '+R+' 0 '+(f>.5?1:0)+' 1 '+x+' '+y+' Z" fill="'+c.accent+'"/>';}
+  const txt=c.done?'Time is up':fmtTime(left);
+  s+='<circle cx="100" cy="100" r="38" fill="'+c.panel+'"/>';
+  s+='<text x="100" y="101" font-size="'+(c.done?13:txt.length>5?16:21)+'" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="'+c.ink+'" style="font-variant-numeric:tabular-nums">'+txt+'</text>';
+  return s+'</svg>';
+}
+const ICON_PLAY='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+const ICON_PAUSE='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>';
 let pipWin=null;
 async function floatClock(){
   if(pipWin){pipWin.close();return;}
   if(!('documentPictureInPicture' in window)){toast('This browser cannot float a clock. Use Chrome or Edge.');return;}
-  try{pipWin=await documentPictureInPicture.requestWindow({width:280,height:120});}
+  try{pipWin=await documentPictureInPicture.requestWindow({width:260,height:330});}
   catch(e){toast('Could not open the floating clock.');return;}
   const d=pipWin.document,cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  const c={ink:v('--ink'),accent:v('--accent'),soft:v('--accent-soft'),panel:v('--panel')};
   d.title='Clock';
   const fl=d.createElement('link');fl.rel='stylesheet';fl.href=$('link[rel="stylesheet"]').href;
   const st=d.createElement('style');
-  st.textContent='html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;overflow:hidden;'+
-    'background:'+v('--panel')+';color:'+v('--ink')+';font-family:'+v('--font-display')+'}'+
-    '.time{font-weight:700;font-size:min(30vw,72vh);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}'+
-    '.ampm{font-size:.34em;font-weight:600;margin-left:.2em;color:'+v('--muted')+';letter-spacing:0}';
+  st.textContent='html,body{height:100%;margin:0}*{box-sizing:border-box}'+
+    'body{display:flex;flex-direction:column;gap:6px;padding:10px 12px;overflow:hidden;background:'+v('--panel')+';color:'+v('--ink')+';font-family:'+v('--font-display')+'}'+
+    '.dial{flex:1;min-height:0;display:flex;justify-content:center}.dial svg{height:100%;max-width:100%}'+
+    '.bot{display:flex;align-items:center;justify-content:space-between;gap:8px}'+
+    '.time{font-weight:700;font-size:min(13vw,10vh);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}'+
+    '.ampm{font-size:.45em;font-weight:600;margin-left:.2em;color:'+v('--muted')+';letter-spacing:0}'+
+    '.play{flex:none;width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:'+c.accent+';color:'+v('--accent-ink')+'}'+
+    'body.clockonly{justify-content:center}body.clockonly .dial,body.clockonly .play{display:none}body.clockonly .bot{justify-content:center}body.clockonly .time{font-size:min(30vw,40vh)}'+
+    'body.done{background:'+v('--sun')+';color:'+v('--on-sun')+'}';
   d.head.append(fl,st);
-  const t=d.createElement('div');t.className='time';d.body.append(t);
+  const dial=h('div',{class:'dial'}),t=h('div',{class:'time'}),play=h('button',{class:'play',type:'button'}),bot=h('div',{class:'bot'},t,play);
+  d.body.append(dial,bot);
   const cw=S.screens.flatMap(s=>s.widgets).find(w=>w.type==='clock');
+  /* The timer shown is the one started most recently, else the first on this screen. */
+  const pick=()=>{const all=S.screens.flatMap(s=>s.widgets).filter(w=>w.type==='timer');return all.find(w=>w.id===lastTimer)||cur().widgets.find(w=>w.type==='timer')||all[0]||null;};
+  const rtOf=w=>RT[w.id]||(RT[w.id]={running:false,endAt:0,left:w.data.dur,done:false});
+  play.addEventListener('click',()=>{
+    const w=pick();if(!w)return;const rt=rtOf(w);
+    if(rt.toggle){rt.toggle();}
+    else if(rt.running){rt.left=Math.max(0,(rt.endAt-Date.now())/1000);rt.running=false;}
+    else{ensureAudio();if(rt.done||rt.left<=0)rt.left=w.data.dur;rt.done=false;rt.endAt=Date.now()+rt.left*1000;rt.running=true;lastTimer=w.id;}
+    draw();
+  });
+  let lastSvg='',lastPlay='';
   const draw=()=>{
     const n=new Date(),h24=cw&&cw.data.h24;
     let hh=n.getHours(),ap='';
     if(!h24){ap=hh>=12?'PM':'AM';hh=hh%12||12;}else hh=String(hh).padStart(2,'0');
     t.replaceChildren(hh+':'+String(n.getMinutes()).padStart(2,'0'),ap?h('span',{class:'ampm'},ap):'');
+    const w=pick();
+    d.body.classList.toggle('clockonly',!w);
+    if(!w){d.body.classList.remove('done');return;}
+    const rt=rtOf(w);
+    let left=rt.running?(rt.endAt-Date.now())/1000:rt.left;
+    /* If the timer's screen is not showing, the board cannot ring the bell, so ring it here. */
+    if(rt.running&&left<=0&&!boardEl.querySelector('[data-id="'+w.id+'"]')){rt.running=false;rt.left=0;rt.done=true;beep();}
+    if(rt.done) left=0;
+    d.body.classList.toggle('done',!!rt.done);
+    const svg=dialSVG(left,w.data.dur,Object.assign({done:rt.done},c,rt.done?{ink:v('--on-sun'),panel:v('--sun')}:{}));
+    if(svg!==lastSvg){dial.innerHTML=svg;lastSvg=svg;}
+    const pl=rt.running?'pause':'play';
+    if(pl!==lastPlay){play.innerHTML=rt.running?ICON_PAUSE:ICON_PLAY;play.setAttribute('aria-label',rt.running?'Pause timer':'Start timer');lastPlay=pl;}
   };
   draw();
-  const iv=setInterval(draw,1000);
+  const iv=setInterval(draw,250);
   $('#bFloat').textContent='Close float';
   pipWin.addEventListener('pagehide',()=>{clearInterval(iv);pipWin=null;$('#bFloat').textContent='Float clock';});
 }
