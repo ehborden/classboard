@@ -184,6 +184,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pop .opt{display:flex;flex-direction:column;align-items:flex-start;border:1px solid transparent;background:transparent;border-radius:8px;padding:7px 9px;cursor:pointer;text-align:left;width:100%}
 .pop .opt:hover{background:var(--panel2)}
 .pop .opt small{color:var(--muted)}
+.pop p{margin:0;color:var(--muted);font-size:13px}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
 .sw.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
@@ -229,6 +230,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <button class="btn" id="bScreen" type="button">Screen settings</button>
     <button class="btn" id="bAdd" type="button">Add widget</button>
     <button class="btn" id="bClasses" type="button">Classes</button>
+    <button class="btn" id="bBackup" type="button">Backup</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
   </div>
 </header>
@@ -299,11 +301,16 @@ const TYPES={
   agenda:{label:'Agenda',desc:'Schedule with a live marker',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda}
 };
 
+/* Fill in missing fields so saved or imported data is safe to render. */
+function normalize(D){
+  if(!Array.isArray(D.classes)) D.classes=[];
+  D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
+  D.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);s.bg=s.bg||'mist';});
+  if(!D.screens.some(s=>s.id===D.active)) D.active=D.screens[0].id;
+  return D;
+}
 if(!S||!Array.isArray(S.screens)||!S.screens.length) S=seed();
-if(!Array.isArray(S.classes)) S.classes=[];
-S.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
-S.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);s.bg=s.bg||'mist';});
-if(!S.screens.some(s=>s.id===S.active)) S.active=S.screens[0].id;
+normalize(S);
 const cur=()=>S.screens.find(s=>s.id===S.active)||S.screens[0];
 
 let saveT=null,warned=false;
@@ -871,6 +878,57 @@ function screenPop(anchor){
   });
 }
 
+/* ---------- Backup ---------- */
+function downloadBackup(){
+  clearTimeout(saveT);flush();
+  const d=new Date(),day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const blob=new Blob([JSON.stringify({app:'classboard',v:1,saved:d.toISOString(),data:S})],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=h('a',{href:url,download:'Classboard backup '+day+'.json'});
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Backup downloaded. Keep it somewhere safe, like Google Drive.');
+}
+function readBackup(f){
+  return f.text().then(txt=>{
+    const j=JSON.parse(txt);
+    const D=j&&j.app==='classboard'&&j.data?j.data:j;
+    if(!D||!Array.isArray(D.screens)||!D.screens.length) throw new Error('bad');
+    return normalize(D);
+  });
+}
+function backupPop(anchor){
+  openPop(anchor,box=>{
+    const file=h('input',{type:'file',accept:'.json,application/json',hidden:true,'aria-label':'Choose a backup file'});
+    const main=()=>box.replaceChildren(
+      h('h3',null,'Backup'),
+      h('p',null,'Saves every screen, widget, image, and class list to one file.'),
+      h('button',{class:'btn primary',type:'button',onclick:downloadBackup},'Download backup'),
+      h('button',{class:'btn',type:'button',onclick:()=>file.click()},'Import backup'),
+      file);
+    file.addEventListener('change',()=>{
+      const f=file.files[0];file.value='';if(!f)return;
+      readBackup(f).then(D=>{
+        const n=(k,one,many)=>k+' '+(k===1?one:many);
+        const go=h('button',{class:'btn danger',type:'button',onclick:()=>{
+          S=D;Object.keys(RT).forEach(k=>delete RT[k]);
+          closePop();renderTabs();renderBoard();
+          clearTimeout(saveT);
+          if(flush()) toast('Backup imported.');
+        }},'Replace my boards');
+        box.replaceChildren(
+          h('h3',null,'Import backup'),
+          h('p',null,'This file has '+n(D.screens.length,'screen','screens')+' and '+n(D.classes.length,'class','classes')+'.'),
+          h('p',null,'Importing replaces everything on this computer. Download a backup first if you want to keep what is here.'),
+          go,
+          h('button',{class:'btn',type:'button',onclick:main},'Cancel'));
+        go.focus();
+      }).catch(()=>toast('That file is not a Classboard backup.'));
+    });
+    main();
+  });
+}
+
 /* ---------- Screens ---------- */
 const tabsEl=$('#tabs');
 function renderTabs(){
@@ -930,6 +988,7 @@ document.addEventListener('keydown',e=>{
 $('#bAdd').addEventListener('click',e=>addPop(e.currentTarget));
 $('#bScreen').addEventListener('click',e=>screenPop(e.currentTarget));
 $('#bClasses').addEventListener('click',()=>openClasses());
+$('#bBackup').addEventListener('click',e=>backupPop(e.currentTarget));
 $('#bPresent').addEventListener('click',()=>setPresent(true));
 $('#pPrev').addEventListener('click',()=>go(-1));
 $('#pNext').addEventListener('click',()=>go(1));
