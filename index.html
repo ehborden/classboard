@@ -229,6 +229,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 .cl-edit label{font-weight:600}
 .cl-count{color:var(--muted);font-size:12px}
 .cl-empty{color:var(--muted)}
+.cl-start{display:flex;flex-direction:column;gap:12px;align-items:flex-start;justify-content:center;padding:20px 0}
+.cl-start p{margin:0;color:var(--muted);max-width:30em}
+.cl-row{display:flex;gap:6px;align-items:center}
+.cl-row .fld{flex:1;min-width:0}
+.cl-paste{display:flex;flex-direction:column;gap:6px}
+.cl-roster{margin:0;padding:6px;list-style:none;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:8px}
+.cl-roster li{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:6px}
+.cl-roster li:hover{background:var(--panel2)}
+.cl-n{color:var(--muted);min-width:1.8em;text-align:right;font-variant-numeric:tabular-nums}
+.cl-nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.cl-foot{padding-top:6px}
 .toasts{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:1200;display:flex;flex-direction:column;gap:6px;max-width:min(420px,calc(100vw - 32px))}
 .toast{background:var(--ink);color:var(--bg);border-radius:10px;padding:9px 13px;box-shadow:var(--shadow)}
 
@@ -247,32 +258,45 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Seating chart */
 .seats{gap:6px}
-.seat-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
-.seat-top .sel{max-width:12em}
-.seat-hint{color:var(--muted);font-size:12px;flex:1 1 12em;min-width:0}
+.seat-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.seat-steps button{padding:7px 14px;font-weight:600}
+.seat-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seat-bar .sel{max-width:12em}
+.seat-bar .btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.seat-hint{color:var(--muted);font-size:13px;min-height:1.2em}
 .seat-canvas{position:relative;flex:1;min-height:0;border:1px dashed var(--line);border-radius:10px;container-type:size;overflow:hidden}
 .present .seat-canvas{border-color:transparent}
 .seat-front{position:absolute;left:30%;right:30%;top:0;text-align:center;font:600 max(11px,2.6cqh) var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border-bottom:3px solid var(--line);padding:2px 0;pointer-events:none}
 .seat-item{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;user-select:none;-webkit-user-select:none}
-.seat-table{background:var(--panel2);border:2px solid var(--line);border-radius:10px}
-.seat-chair{background:var(--panel);border:2px solid var(--muted);border-radius:12px;font-weight:700;font-size:max(12px,min(2.4cqw,4.6cqh));line-height:1.05;padding:3px;overflow:hidden;overflow-wrap:anywhere}
+.seat-table{background:var(--panel2);border:2px solid var(--line);border-radius:10px;flex-direction:column;gap:4px}
+.seat-chair{background:var(--panel);border:2px solid var(--muted);border-radius:12px;font-weight:700;font-size:max(12px,min(1.9cqw,3.8cqh));line-height:1.05;padding:3px;overflow:hidden;overflow-wrap:break-word;hyphens:none}
 .seat-chair.empty{border-style:dashed}
 .arranging .seat-item{cursor:move}
+.arranging .seat-item.on{outline:3px solid var(--accent);outline-offset:2px;z-index:5}
 .seat-label{border:0;background:transparent;text-align:center;width:90%;font:600 max(11px,1.8cqw) var(--font-body);color:var(--muted);border-radius:6px}
-.seat-label:focus{background:var(--panel)}
-.seat-table{flex-direction:column;gap:4px}
+.arranging .seat-label:focus{background:var(--panel)}
 .seat-around{display:none;font-size:11px;padding:2px 8px}
-.arranging .seat-around{display:inline-block}
-.present .seat-around{display:none!important}
+.arranging .seat-table.on .seat-around{display:inline-block}
 .seat-name{cursor:grab;padding:2px 4px;border-radius:6px}
 .seat-sel{outline:3px solid var(--accent);outline-offset:1px}
 .seat-x,.seat-rs{display:none}
-.arranging .seat-x{display:grid;place-items:center;position:absolute;top:-1px;right:-1px;width:20px;height:20px;border:0;border-radius:6px;background:var(--line);color:var(--ink);cursor:pointer;padding:0;font-size:14px;line-height:1}
-.arranging .seat-rs{display:block;position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 55%,var(--muted) 55%,var(--muted) 65%,transparent 65%)}
-.seat-tray{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-height:30%;overflow:auto;min-height:34px;padding:4px;border-radius:10px;background:var(--panel2)}
-.seat-tray .chip{touch-action:none;font-weight:600}
+.arranging .seat-item.on .seat-x{display:grid;place-items:center;position:absolute;top:-1px;right:-1px;width:22px;height:22px;border:0;border-radius:6px;background:var(--ink);color:var(--panel);cursor:pointer;padding:0;font-size:15px;line-height:1}
+.arranging .seat-item.on .seat-rs{display:block;position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 50%,var(--accent) 50%)}
+.seat-qs{position:absolute;inset:12% 6% 6%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+.seat-qs h3{margin:0;font:700 20px var(--font-display)}
+.seat-qs p{margin:0;color:var(--muted)}
+.seat-qs-opts{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.seat-qs-card{display:flex;flex-direction:column;gap:10px;align-items:center;border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:14px 18px;min-width:220px}
+.seat-qs-ctl{display:flex;flex-direction:column;gap:6px}
+.seat-step{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.seat-step b{min-width:1.5em;text-align:center}
+.seat-tray{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-height:30%;overflow:auto;min-height:38px;padding:6px;border-radius:10px;background:var(--panel2)}
+.seat-tray[hidden]{display:none}
+.seat-tray-l{color:var(--muted);font-size:13px;margin-right:4px}
+.seat-tray .chip{touch-action:none;font-weight:600;font-size:14px;padding:4px 12px}
 .seat-ghost{position:fixed;z-index:2000;pointer-events:none;background:var(--panel);border:2px solid var(--accent);border-radius:999px;padding:3px 10px;font-weight:700;box-shadow:var(--shadow);transform:translate(-50%,-60%)}
-.present .seat-tray,.present .seat-top,.present .seat-x,.present .seat-rs{display:none}
+.present .seat-tray,.present .seat-top,.present .seat-hint,.present .seat-qs,.present .seat-x,.present .seat-rs,.present .seat-around{display:none!important}
+.present .seat-item.on{outline:0}
 .present .seat-canvas,.present .seat-label{pointer-events:none}
 .present .ag-title,.present .ag-time,.present .ag-txt{pointer-events:auto}
 
@@ -363,7 +387,7 @@ const TYPES={
   clock:{label:'Clock',desc:'Time and date',w:.22,h:.24,data:()=>({h24:false,sec:false,date:true}),build:buildClock},
   timer:{label:'Timer',desc:'Countdown with a bell',w:.24,h:.52,data:()=>({dur:300}),build:buildTimer},
   steps:{label:'Task steps',desc:'Up to five steps to check off',w:.40,h:.50,data:()=>({title:'Steps',items:[{id:uid(),txt:'',done:false}]}),build:buildSteps},
-  seats:{label:'Seating chart',desc:'Tables and chairs with names or initials',w:.63,h:.87,data:()=>({classId:S.classes[0]?S.classes[0].id:null,items:[],seats:{},initials:false}),build:buildSeats},
+  seats:{label:'Seating chart',desc:'Tables and chairs with names or initials',w:.96,h:.94,data:()=>({classId:S.classes[0]?S.classes[0].id:null,items:[],seats:{},initials:false}),build:buildSeats},
   picker:{label:'Names and groups',desc:'Pick a name, make partners or groups',w:.44,h:.44,data:()=>({classId:S.classes[0]?S.classes[0].id:null,mode:'one',size:3,used:[],result:null}),build:buildPicker},
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
@@ -848,38 +872,76 @@ function buildSteps(w,body,tools){
 }
 
 /* ---------- Seating chart ---------- */
-/* Furniture is shared by every class. Each class keeps its own seat assignments in D.seats[classId] = {chairId: name}. */
-function buildSeats(w,body,tools){
+/* Two steps: set up the room (furniture), then seat students.
+   Furniture is shared by every class. Each class keeps its own seats in D.seats[classId] = {chairId: name}. */
+function buildSeats(w,body,tools,wel){
   const D=w.data;D.items=D.items||[];D.seats=D.seats||{};
-  let arrange=!D.items.length,pick=null;
+  let step=D.items.length?'seat':'room',pick=null,selItem=null;
+  let qs={rows:4,cols:6,tables:6,per:4};
   const getClass=()=>S.classes.find(c=>c.id===D.classId)||null;
   const seatMap=()=>{const c=getClass();return c?(D.seats[c.id]||(D.seats[c.id]={})):{};};
   const show=n=>D.initials?n.split(/\s+/).filter(Boolean).map(p=>p[0]).join('').toUpperCase():n;
-  const clsSel=h('select',{class:'sel','aria-label':'Class'});
-  clsSel.addEventListener('change',()=>{
-    if(clsSel.value==='__edit'){const c=getClass();clsSel.value=c?c.id:'__edit';openClasses(c&&c.id);return;}
-    D.classId=clsSel.value;pick=null;save();draw();
-  });
-  const hint=h('span',{class:'seat-hint'});
+  const stepsEl=h('div',{class:'seg seat-steps',role:'group','aria-label':'Steps'});
+  const bar=h('div',{class:'seat-bar'});
+  const hint=h('div',{class:'seat-hint'});
   const canvas=h('div',{class:'seat-canvas'});
   const tray=h('div',{class:'seat-tray','aria-label':'Students without a seat'});
-  body.append(h('div',{class:'seat-top'},clsSel,hint),canvas,tray);
-  const add=(kind)=>{
+  body.append(h('div',{class:'seat-top'},stepsEl,bar),hint,canvas,tray);
+  canvas.addEventListener('pointerdown',e=>{if(e.target===canvas&&selItem){selItem=null;draw();}});
+  wel.addEventListener('keydown',e=>{
+      if(step!=='room'||!selItem||e.target.closest('input'))return;
+      if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeItem(selItem);}
+  });
+  function setStep(st){step=st;pick=null;selItem=null;draw();}
+  function newItem(kind,x,y,wd,ht,label){return {id:uid(),kind,x,y,w:wd,h:ht,label:label||''};}
+  function add(kind){
     const n=D.items.length,big=kind==='table';
-    const it={id:uid(),kind,w:big?.22:.09,h:big?.16:.11,label:''};
-    it.x=clamp(.36+(n%6)*.03,0,1-it.w);it.y=clamp(.3+(n%6)*.04,0,1-it.h);
-    D.items.push(it);save();draw();
-  };
-  const addT=tbtn('+ Table','Add a table',()=>add('table'));
-  const addC=tbtn('+ Chair','Add a chair',()=>add('chair'));
-  const clearB=tbtn('Clear','Unseat everyone in this class',null);
-  armed(clearB,'Clear',()=>{const c=getClass();if(c)D.seats[c.id]={};pick=null;save();draw();},'Unseat all?');
-  tools.append(
-    tog('Arrange','Add, move, or remove tables and chairs',()=>arrange,v=>{arrange=v;pick=null;draw();}),
-    addT,addC,
-    tog('Initials','Show initials instead of names',()=>!!D.initials,v=>{D.initials=v;draw();}),
-    clearB);
-
+    const it=newItem(kind,0,0,big?.2:.08,big?.15:.1);
+    it.x=clamp(.06+(n%8)*.04,0,1-it.w);it.y=clamp(.14+(n%8)*.04,0,1-it.h);
+    D.items.push(it);selItem=it.id;save();draw();
+  }
+  function removeItem(id){
+    D.items=D.items.filter(i=>i.id!==id);
+    Object.values(D.seats).forEach(m=>{delete m[id];});
+    selItem=null;save();draw();
+  }
+  /* Quick start: rows of single desks, or table groups with chairs around each table. */
+  function makeRows(r,c){
+    const top=.13,cw=.9/c,ch=(.96-top)/r;
+    D.items=[];
+    for(let i=0;i<r;i++)for(let j=0;j<c;j++)
+      D.items.push(newItem('chair',.05+j*cw+cw*.1,top+i*ch+ch*.15,cw*.8,ch*.7));
+    save();draw();
+  }
+  function makeTables(n,per){
+    const rows=Math.ceil(Math.sqrt(n/1.6)),cols=Math.ceil(n/rows),top=.12,cw=.94/cols,ch=(.97-top)/rows;
+    D.items=[];
+    for(let k=0;k<n;k++){
+      const i=Math.floor(k/cols),j=k%cols;
+      const t=newItem('table',.03+j*cw+cw*.18,top+i*ch+ch*.32,cw*.64,ch*.36,'Table '+(k+1));
+      D.items.push(t);
+    }
+    D.items.filter(t=>t.kind==='table').forEach(t=>around(t,per,true));
+    save();draw();
+  }
+  /* Spaces n chairs evenly along the table's two long sides, just outside its edges. */
+  function around(t,n,quiet){
+    const r=canvas.getBoundingClientRect(),W=r.width||800,H=r.height||500,wide=t.w*W>=t.h*H;
+    const cw=Math.min(.09,72/W),ch=Math.min(.11,60/H),gx=12/W,gy=8/H;
+    const a=Math.ceil(n/2),b=n-a;
+    const side=(count,first)=>{
+      const w2=wide?Math.min(cw,t.w/count-gx):cw,h2=wide?ch:Math.min(ch,t.h/count-gy);
+      for(let i=0;i<count;i++){
+        const f=(i+.5)/count,c=newItem('chair',0,0,w2,h2);
+        if(wide){c.x=t.x+t.w*f-w2/2;c.y=first?t.y-h2-gy:t.y+t.h+gy;}
+        else{c.y=t.y+t.h*f-h2/2;c.x=first?t.x-w2-gx:t.x+t.w+gx;}
+        c.x=clamp(c.x,0,1-w2);c.y=clamp(c.y,0,1-h2);
+        D.items.push(c);
+      }
+    };
+    side(a,true);side(b,false);
+    if(!quiet){save();draw();}
+  }
   function seat(name,chairId,from){
     const m=seatMap();
     if(chairId){
@@ -892,7 +954,7 @@ function buildSeats(w,body,tools){
   }
   /* A name can be dragged, or clicked and then a chair clicked. */
   function nameDown(e,name,from){
-    if(arrange||presenting||e.button>0)return;
+    if(step!=='seat'||presenting||e.button>0)return;
     e.preventDefault();e.stopPropagation();
     const sx=e.clientX,sy=e.clientY;let ghost=null;
     const src=e.currentTarget;src.setPointerCapture(e.pointerId);
@@ -914,44 +976,28 @@ function buildSeats(w,body,tools){
     src.addEventListener('pointermove',mv);src.addEventListener('pointerup',up);src.addEventListener('pointercancel',up);
   }
   function moveDown(e,it,el,resize){
-    if(!arrange||presenting||e.button>0||(!resize&&e.target.closest('input,button,.seat-rs')))return;
+    if(step!=='room'||presenting||e.button>0||(!resize&&e.target.closest('input,button,.seat-rs')))return;
     e.preventDefault();e.stopPropagation();
+    if(selItem!==it.id){selItem=it.id;canvas.querySelectorAll('.seat-item.on').forEach(x=>x.classList.remove('on'));el.classList.add('on');}
     const r=canvas.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,o={x:it.x,y:it.y,w:it.w,h:it.h};
     const src=e.currentTarget;src.setPointerCapture(e.pointerId);
     const mv=ev=>{
       const dx=(ev.clientX-sx)/r.width,dy=(ev.clientY-sy)/r.height;
-      if(resize){it.w=clamp(o.w+dx,.05,1-it.x);it.h=clamp(o.h+dy,.05,1-it.y);}
+      if(resize){it.w=clamp(o.w+dx,.04,1-it.x);it.h=clamp(o.h+dy,.04,1-it.y);}
       else{it.x=clamp(o.x+dx,0,1-it.w);it.y=clamp(o.y+dy,0,1-it.h);}
       placeItem(el,it);
     };
     const up=()=>{src.removeEventListener('pointermove',mv);src.removeEventListener('pointerup',up);src.removeEventListener('pointercancel',up);save();};
     src.addEventListener('pointermove',mv);src.addEventListener('pointerup',up);src.addEventListener('pointercancel',up);
   }
-  /* Spaces n chairs evenly along the table's two long sides, just outside its edges. */
-  function around(t,n){
-    const r=canvas.getBoundingClientRect(),wide=t.w*r.width>=t.h*r.height;
-    const cw=Math.min(.09,72/r.width),ch=Math.min(.11,60/r.height),gx=12/r.width,gy=8/r.height;
-    const a=Math.ceil(n/2),b=n-a;
-    const side=(count,first)=>{
-      /* Chairs shrink so they fit along the side without touching. */
-      const w2=wide?Math.min(cw,t.w/count-gx):cw,h2=wide?ch:Math.min(ch,t.h/count-gy);
-      for(let i=0;i<count;i++){
-        const f=(i+.5)/count,c={id:uid(),kind:'chair',w:w2,h:h2,label:''},cw=w2,ch=h2;
-        if(wide){c.x=t.x+t.w*f-cw/2;c.y=first?t.y-ch-gy:t.y+t.h+gy;}
-        else{c.y=t.y+t.h*f-ch/2;c.x=first?t.x-cw-gx:t.x+t.w+gx;}
-        c.x=clamp(c.x,0,1-cw);c.y=clamp(c.y,0,1-ch);
-        D.items.push(c);
-      }
-    };
-    side(a,true);side(b,false);save();draw();
-  }
   function placeItem(el,it){el.style.left=it.x*100+'%';el.style.top=it.y*100+'%';el.style.width=it.w*100+'%';el.style.height=it.h*100+'%';}
   function itemEl(it,m){
-    const el=h('div',{class:'seat-item seat-'+it.kind,'data-id':it.id});
+    const el=h('div',{class:'seat-item seat-'+it.kind+(selItem===it.id?' on':''),'data-id':it.id});
     placeItem(el,it);
     if(it.kind==='table'){
-      const lb=h('input',{class:'seat-label',value:it.label||'',placeholder:arrange?'Table':'','aria-label':'Table label'});
+      const lb=h('input',{class:'seat-label',value:it.label||'',placeholder:step==='room'?'Table':'','aria-label':'Table label',readonly:step!=='room'});
       lb.addEventListener('input',()=>{it.label=lb.value;save();});
+      lb.addEventListener('focus',()=>{if(step==='room'&&selItem!==it.id){selItem=it.id;canvas.querySelectorAll('.seat-item.on').forEach(x=>x.classList.remove('on'));el.classList.add('on');}});
       const ar=h('button',{class:'chip seat-around',type:'button',title:'Add chairs around this table'},'+ Chairs');
       ar.addEventListener('click',()=>openPop(ar,box=>box.append(h('h3',null,'Chairs around this table'),
         h('div',{class:'pk-chips'},[2,4,6,8].map(n=>h('button',{class:'chip',type:'button',onclick:()=>{closePop();around(it,n);}},String(n)))))));
@@ -964,48 +1010,85 @@ function buildSeats(w,body,tools){
         nm.addEventListener('pointerdown',e=>nameDown(e,name,it.id));
         el.append(nm);
       }
-      el.addEventListener('click',()=>{if(!arrange&&pick&&!name)seat(pick.name,it.id,pick.from);else if(!arrange&&pick&&name&&pick.name!==name)seat(pick.name,it.id,pick.from);});
+      el.addEventListener('click',()=>{if(step==='seat'&&pick&&pick.name!==name)seat(pick.name,it.id,pick.from);});
     }
     const x=h('button',{class:'seat-x',type:'button',title:'Remove','aria-label':'Remove'},'×');
-    x.addEventListener('click',()=>{
-      D.items=D.items.filter(i=>i!==it);
-      Object.values(D.seats).forEach(m=>{delete m[it.id];});
-      save();draw();
-    });
+    x.addEventListener('click',()=>removeItem(it.id));
     const rs=h('div',{class:'seat-rs',title:'Resize'});
     rs.addEventListener('pointerdown',e=>moveDown(e,it,el,true));
     el.addEventListener('pointerdown',e=>moveDown(e,it,el,false));
     el.append(x,rs);
     return el;
   }
+  function stepper(label,key,min,max){
+    const val=h('b',null,String(qs[key]));
+    const st=d=>{qs[key]=clamp(qs[key]+d,min,max);val.textContent=qs[key];};
+    return h('span',{class:'seat-step'},label,
+      h('button',{class:'chip',type:'button','aria-label':'Fewer '+label,onclick:()=>st(-1)},'-'),val,
+      h('button',{class:'chip',type:'button','aria-label':'More '+label,onclick:()=>st(1)},'+'));
+  }
+  function quickStart(){
+    return h('div',{class:'seat-qs'},
+      h('h3',null,'Start with a layout'),
+      h('p',null,'Pick the one closest to your room. You can move, add, or remove pieces after.'),
+      h('div',{class:'seat-qs-opts'},
+        h('div',{class:'seat-qs-card'},h('b',null,'Rows of desks'),
+          h('div',{class:'seat-qs-ctl'},stepper('Rows','rows',1,8),stepper('Desks per row','cols',1,10)),
+          h('button',{class:'btn primary',type:'button',onclick:()=>makeRows(qs.rows,qs.cols)},'Make rows')),
+        h('div',{class:'seat-qs-card'},h('b',null,'Table groups'),
+          h('div',{class:'seat-qs-ctl'},stepper('Tables','tables',1,12),stepper('Seats per table','per',2,8)),
+          h('button',{class:'btn primary',type:'button',onclick:()=>makeTables(qs.tables,qs.per)},'Make tables'))),
+      h('p',null,'Or build it piece by piece with + Table and + Chair above.'));
+  }
   function draw(){
     const cls=getClass();
-    clsSel.replaceChildren(...S.classes.map(c=>h('option',{value:c.id},c.name||'Untitled class')),
-      h('option',{value:'__edit'},S.classes.length?'Edit classes...':'Add a class...'));
-    clsSel.value=cls?cls.id:'__edit';
-    const m=seatMap(),ids=new Set(D.items.filter(i=>i.kind==='chair').map(i=>i.id));
+    const chairs=D.items.filter(i=>i.kind==='chair');
+    const m=seatMap(),ids=new Set(chairs.map(i=>i.id));
     if(cls) Object.keys(m).forEach(k=>{if(!ids.has(k)||!cls.students.includes(m[k]))delete m[k];});
-    body.classList.toggle('arranging',arrange);
-    addT.hidden=addC.hidden=!arrange;
-    canvas.replaceChildren(h('div',{class:'seat-front'},'Front of room'),...D.items.map(it=>itemEl(it,m)));
-    const seated=new Set(Object.values(m));
-    if(!cls){
-      hint.textContent='';
-      tray.replaceChildren(h('span',{class:'seat-hint'},'Add a class to seat students.'),h('button',{class:'btn',type:'button',onclick:()=>openClasses()},'Add a class'));
-    }else if(arrange){
-      hint.textContent=D.items.length?'Drag to move. Drag a corner to resize a table.':'Add tables and chairs to match your room.';
-      tray.replaceChildren(h('span',{class:'seat-hint'},'Turn off Arrange to seat students.'));
+    stepsEl.replaceChildren(...[['room','1. Set up room'],['seat','2. Seat students']].map(([k,l])=>{
+      const b=h('button',{type:'button','aria-pressed':String(step===k),class:step===k?'on':''},l);
+      b.addEventListener('click',()=>setStep(k));
+      return b;
+    }));
+    body.classList.toggle('arranging',step==='room');
+    if(step==='room'){
+      const startOver=h('button',{class:'btn',type:'button'},'Start over');
+      armed(startOver,'Start over',()=>{D.items=[];D.seats={};selItem=null;save();draw();},'Remove all pieces?');
+      bar.replaceChildren(
+        h('button',{class:'btn',type:'button',onclick:()=>add('table')},'+ Table'),
+        h('button',{class:'btn',type:'button',onclick:()=>add('chair')},'+ Chair'),
+        ...(D.items.length?[startOver]:[]));
+      hint.textContent=!D.items.length?'':selItem?'Drag to move. Drag the corner to resize. The × removes it.':'Click a piece to move, resize, or remove it. When it looks like your room, go to 2. Seat students.';
     }else{
+      const clsSel=h('select',{class:'sel','aria-label':'Class'},
+        S.classes.map(c=>h('option',{value:c.id},c.name||'Untitled class')));
+      if(cls) clsSel.value=cls.id;
+      clsSel.addEventListener('change',()=>{D.classId=clsSel.value;pick=null;save();draw();});
+      const clearB=h('button',{class:'btn',type:'button'},'Clear seats');
+      armed(clearB,'Clear seats',()=>{if(cls)D.seats[cls.id]={};pick=null;save();draw();},'Unseat everyone?');
+      bar.replaceChildren(
+        ...(S.classes.length?[clsSel]:[]),
+        h('button',{class:'btn',type:'button',onclick:()=>openClasses(cls&&cls.id)},cls?'Edit class':'Add a class'),
+        h('button',{class:'btn'+(D.initials?' on':''),type:'button','aria-pressed':String(!!D.initials),onclick:()=>{D.initials=!D.initials;save();draw();}},D.initials?'Show names':'Show initials'),
+        clearB);
+      hint.textContent=!chairs.length?'':!cls?'Add a class first, then seat students.':pick?'Now click a chair for '+pick.name+'.':'Drag a name onto a chair, or click a name, then a chair. Drag a name back down here to unseat it.';
+    }
+    canvas.replaceChildren(h('div',{class:'seat-front'},'Front of room'),...D.items.map(it=>itemEl(it,m)));
+    if(step==='room'&&!D.items.length) canvas.append(quickStart());
+    if(step==='seat'&&!chairs.length) canvas.append(h('div',{class:'seat-qs'},h('p',null,'There are no chairs yet.'),h('button',{class:'btn primary',type:'button',onclick:()=>setStep('room')},'Go to 1. Set up room')));
+    const seated=new Set(Object.values(m));
+    if(step==='seat'&&cls&&chairs.length){
       const left=cls.students.filter(n=>!seated.has(n));
-      hint.textContent=pick?'Now click a chair for '+pick.name+'.':'Drag a name onto a chair, or click a name, then a chair.';
-      tray.replaceChildren(...(left.length?left.map(n=>{
+      tray.hidden=false;
+      tray.replaceChildren(h('span',{class:'seat-tray-l'},left.length?'Not seated yet:':'Everyone has a seat.'),...left.map(n=>{
         const c=h('button',{class:'chip'+(pick&&pick.name===n?' seat-sel':''),type:'button',title:n},show(n));
         c.addEventListener('pointerdown',e=>nameDown(e,n,null));
         return c;
-      }):[h('span',{class:'seat-hint'},'Everyone has a seat.')]));
-    }
+      }));
+      if(!cls.students.length) tray.replaceChildren(h('span',{class:'seat-tray-l'},'This class has no students yet.'),h('button',{class:'btn',type:'button',onclick:()=>openClasses(cls.id)},'Add students'));
+    }else tray.hidden=true;
   }
-  tray.addEventListener('click',e=>{if(pick&&pick.from&&e.target===tray)seat(pick.name,null,pick.from);});
+  tray.addEventListener('click',e=>{if(pick&&pick.from&&(e.target===tray||e.target.classList.contains('seat-tray-l')))seat(pick.name,null,pick.from);});
   classHooks.push(()=>{if(!getClass())D.classId=S.classes[0]?S.classes[0].id:null;draw();});
   draw();
 }
@@ -1033,7 +1116,8 @@ function buildPicker(w,body,tools,el){
   const info=h('span',{class:'pk-info'});
   const here=h('button',{class:'btn',type:'button'},'Who is here');
   const panel=h('div',{class:'pk-here',hidden:true});
-  body.append(h('div',{class:'pk-top'},sel,seg,sizeBox),out,h('div',{class:'pk-bot'},go,info,here),panel);
+  const editB=h('button',{class:'btn',type:'button',onclick:()=>{const c=getClass();openClasses(c&&c.id);}},'Edit class');
+  body.append(h('div',{class:'pk-top'},sel,editB,seg,sizeBox),out,h('div',{class:'pk-bot'},go,info,here),panel);
 
   function pickOne(){
     const pool=present();if(!pool.length)return;
@@ -1135,60 +1219,93 @@ function openClasses(focusId){
   const box=h('div',{class:'modal',role:'dialog','aria-modal':'true','aria-label':'Classes'});
   back.append(box);document.body.append(back);
   let selId=(focusId&&S.classes.some(c=>c.id===focusId))?focusId:(S.classes[0]&&S.classes[0].id);
+  let pasting=false;
   const close=()=>{back.remove();document.removeEventListener('keydown',onKey,true);};
   const onKey=e=>{if(e.key==='Escape'){e.stopPropagation();close();}};
   document.addEventListener('keydown',onKey,true);
   back.addEventListener('pointerdown',e=>{if(e.target===back)close();});
   const countText=c=>c.students.length+(c.students.length===1?' student':' students');
-  function add(){
-    const c={id:uid(),name:'New class',students:[],absent:[]};
-    S.classes.push(c);selId=c.id;classesChanged();render();
-    setTimeout(()=>{const n=$('#clName',box);if(n)n.select();},0);
+  function addClass(){
+    const c={id:uid(),name:'',students:[],absent:[]};
+    S.classes.push(c);selId=c.id;pasting=false;classesChanged();render();
+    setTimeout(()=>{const n=$('#clName',box);if(n)n.focus();},0);
+  }
+  /* Adds names, skipping blanks and repeats. Returns how many repeats were skipped. */
+  function addNames(cls,names){
+    let skipped=0;
+    names.map(n=>n.trim()).filter(Boolean).forEach(n=>{if(cls.students.includes(n))skipped++;else cls.students.push(n);});
+    classesChanged();
+    return skipped;
   }
   function render(){
     const cls=S.classes.find(c=>c.id===selId);
     const list=h('div',{class:'cl-list'},
-      S.classes.map(c=>h('button',{class:'cl-item'+(c.id===selId?' on':''),type:'button',onclick:()=>{selId=c.id;render();}},
+      S.classes.map(c=>h('button',{class:'cl-item'+(c.id===selId?' on':''),type:'button',onclick:()=>{selId=c.id;pasting=false;render();}},
         c.name||'Untitled class',h('small',null,countText(c)))),
-      h('button',{class:'btn',type:'button',onclick:add},'New class'));
+      h('button',{class:'btn',type:'button',onclick:addClass},'+ Add a class'));
     let editor;
     if(!cls){
-      editor=h('div',{class:'cl-empty'},'No classes yet. Create one to use the name picker.');
+      editor=h('div',{class:'cl-start'},
+        h('p',null,'Add a class, then add your students. The name picker and seating chart use these lists.'),
+        h('button',{class:'btn primary big',type:'button',onclick:addClass},'+ Add your first class'));
     }else{
-      const name=h('input',{class:'fld',id:'clName',value:cls.name,'aria-label':'Class name'});
-      const ta=h('textarea',{class:'fld',id:'clNames',rows:'12','aria-label':'Students, one per line'});
-      ta.value=cls.students.join('\n');
-      const count=h('div',{class:'cl-count'},countText(cls));
-      const del=h('button',{class:'btn',type:'button'},'Delete class');
-      armed(del,'Delete class',()=>{
-        S.classes=S.classes.filter(c=>c.id!==cls.id);
-        selId=S.classes[0]&&S.classes[0].id;classesChanged();render();
-      },'Click again to delete');
+      const name=h('input',{class:'fld',id:'clName',value:cls.name,placeholder:'Class name, like Period 2','aria-label':'Class name'});
       name.addEventListener('input',()=>{
         cls.name=name.value;
         const it=$('.cl-item.on',box);if(it)it.firstChild.textContent=cls.name||'Untitled class';
         classesChanged();
       });
-      ta.addEventListener('input',()=>{
-        const lines=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
-        const uniq=[...new Set(lines)];
-        cls.students=uniq;cls.absent=cls.absent.filter(s=>uniq.includes(s));
-        count.textContent=countText(cls)+(lines.length>uniq.length?'. '+(lines.length-uniq.length)+' repeated name ignored. Add a last initial to tell students apart.':'');
-        const sm=$('.cl-item.on small',box);if(sm)sm.textContent=countText(cls);
-        classesChanged();
-      });
+      const msg=h('div',{class:'cl-count'});
+      const one=h('input',{class:'fld',id:'clOne',placeholder:'Type a student name, then press Enter','aria-label':'Student name'});
+      const addOne=()=>{
+        const v=one.value.trim();if(!v){one.focus();return;}
+        const sk=addNames(cls,[v]);
+        one.value='';render();
+        const f=$('#clOne',box);if(f)f.focus();
+        if(sk){const m=$('#clMsg',box);if(m)m.textContent=v+' is already in this class. Add a last initial to tell students apart.';}
+      };
+      one.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addOne();}});
+      msg.id='clMsg';
+      const roster=h('ol',{class:'cl-roster'},cls.students.map((n,i)=>{
+        const rm=h('button',{class:'ag-rm',type:'button',title:'Remove '+n,'aria-label':'Remove '+n},'×');
+        rm.addEventListener('click',()=>{
+          cls.students.splice(i,1);cls.absent=cls.absent.filter(x=>x!==n);classesChanged();render();
+        });
+        return h('li',null,h('span',{class:'cl-n'},(i+1)+'.'),h('span',{class:'cl-nm'},n),rm);
+      }));
+      let pasteBox=null;
+      if(pasting){
+        const ta=h('textarea',{class:'fld',rows:'6','aria-label':'Paste names, one per line',placeholder:'Paste names here, one per line'});
+        pasteBox=h('div',{class:'cl-paste'},ta,
+          h('div',{class:'cl-row'},
+            h('button',{class:'btn primary',type:'button',onclick:()=>{
+              const before=cls.students.length,sk=addNames(cls,ta.value.split(/\r?\n|\t|,/));
+              pasting=false;render();
+              const m=$('#clMsg',box);if(m)m.textContent='Added '+(cls.students.length-before)+'.'+(sk?' Skipped '+sk+' already in the class.':'');
+            }},'Add these names'),
+            h('button',{class:'btn',type:'button',onclick:()=>{pasting=false;render();}},'Cancel')));
+        setTimeout(()=>ta.focus(),0);
+      }
+      const del=h('button',{class:'btn',type:'button'},'Delete class');
+      armed(del,'Delete class',()=>{
+        S.classes=S.classes.filter(c=>c.id!==cls.id);
+        selId=S.classes[0]&&S.classes[0].id;classesChanged();render();
+      },'Click again to delete');
       editor=h('div',{class:'cl-edit'},
         h('label',{for:'clName'},'Class name'),name,
-        h('label',{for:'clNames'},'Students, one per line'),ta,count,
-        h('div',{class:'cl-count'},'Tip: paste a column of names from a spreadsheet.'),
-        h('div',null,del));
+        h('label',{for:'clOne'},'Students ('+cls.students.length+')'),
+        h('div',{class:'cl-row'},one,h('button',{class:'btn primary',type:'button',onclick:addOne},'Add')),
+        pasteBox||h('button',{class:'lnk',type:'button',onclick:()=>{pasting=true;render();}},'Or paste a whole list, like a column from a spreadsheet'),
+        msg,
+        cls.students.length?roster:h('div',{class:'cl-empty'},'No students yet.'),
+        h('div',{class:'cl-foot'},del));
     }
     box.replaceChildren(
       h('div',{class:'modal-head'},h('h2',null,'Classes'),h('button',{class:'btn primary',type:'button',onclick:close},'Done')),
       h('div',{class:'cl-grid'},list,editor));
   }
   render();
-  setTimeout(()=>{const t=$('#clNames',box)||$('.btn',box);if(t&&t.focus)t.focus();},0);
+  setTimeout(()=>{const t=$('#clOne',box)||$('.btn.primary.big',box)||$('.btn',box);if(t&&t.focus)t.focus();},0);
 }
 
 /* ---------- Popovers ---------- */
