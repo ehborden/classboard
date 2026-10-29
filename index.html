@@ -1252,7 +1252,19 @@ function screenPop(anchor){
       const i=S.screens.indexOf(sc);S.screens.splice(i,1);
       closePop();switchTo(S.screens[Math.max(0,i-1)].id);
     },'Click again to delete');
-    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Background'),sws,dup,del);
+    /* Rearranges this screen into the default layout, keeping its text, agenda rows, and timer length. */
+    const lay=h('button',{class:'btn',type:'button'},'Use default layout');
+    armed(lay,'Use default layout',()=>{
+      const find=t=>sc.widgets.find(x=>x.type===t);
+      const tx=find('text'),ag=find('agenda'),tm=find('timer');
+      const ws=guideWidgets(tx?tx.data.html:'',ag?ag.data.items:[]);
+      if(ag)ws[0].data.title=ag.data.title;
+      if(tx)ws[1].data.fs=tx.data.fs;
+      if(tm)ws[3].data=Object.assign({},tm.data);
+      sc.widgets=ws;save();closePop();renderBoard();
+      toast('This screen now uses the default layout.');
+    },'Replace this layout?');
+    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Background'),sws,h('h3',null,'Layout'),lay,dup,del);
     setTimeout(()=>name.select(),0);
   });
 }
