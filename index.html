@@ -247,6 +247,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .cl-foot{padding-top:6px}
 .toasts{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:1200;display:flex;flex-direction:column;gap:6px;max-width:min(420px,calc(100vw - 32px))}
 .toast{background:var(--ink);color:var(--bg);border-radius:10px;padding:9px 13px;box-shadow:var(--shadow)}
+.toast-act{border:1px solid currentColor;background:transparent;color:inherit;border-radius:6px;padding:2px 8px;margin-left:6px;cursor:pointer;font-weight:600}
 
 /* Present mode */
 .pbar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:900;gap:6px;align-items:center;background:var(--bar);border:1px solid var(--line);border-radius:999px;padding:4px 6px;box-shadow:var(--shadow);opacity:.35;transition:opacity .2s}
@@ -322,6 +323,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <input class="brand" id="brand" aria-label="Board name" title="Click to rename this board" spellcheck="false" autocomplete="off">
   <nav class="tabs" id="tabs" aria-label="Screens"></nav>
   <div class="acts">
+    <button class="btn" id="bUndo" type="button" title="Undo the last change (Cmd+Z)" disabled>Undo</button>
     <button class="btn" id="bAdd" type="button">Add widget</button>
     <button class="btn" id="bFloat" type="button" title="Open a small clock and timer that stays on top of other windows, like PowerPoint">Float clock</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
@@ -415,6 +417,7 @@ const cur=()=>S.screens.find(s=>s.id===S.active)||S.screens[0];
 
 let saveT=null,warned=false;
 function flush(){
+  record();
   try{localStorage.setItem(KEY,JSON.stringify(S));warned=false;return true;}
   catch(e){
     if(!warned){warned=true;toast('This browser is not saving your boards. Storage may be full or blocked. Remove large images to free space.');}
@@ -422,12 +425,59 @@ function flush(){
   }
 }
 function save(){clearTimeout(saveT);saveT=setTimeout(flush,300);}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){
+    const t=e.target;
+    if(t&&t.closest&&t.closest('input,textarea,select,[contenteditable="true"]'))return;
+    if(document.querySelector('.modal-back'))return;
+    e.preventDefault();undo();
+  }
+});
 window.addEventListener('pagehide',()=>{clearTimeout(saveT);flush();});
 
-function toast(msg){
+/* act is an optional {label, fn} that adds a button to the toast. */
+function toast(msg,act){
   const t=h('div',{class:'toast'},msg);
+  if(act) t.append(' ',h('button',{class:'toast-act',type:'button',onclick:()=>{t.remove();act.fn();}},act.label));
   $('#toasts').append(t);
-  setTimeout(()=>t.remove(),5500);
+  setTimeout(()=>t.remove(),act?9000:5500);
+}
+
+/* ---------- Undo ---------- */
+/* Every saved change becomes a snapshot. Image data is kept once in IMG and referenced by id, so
+   snapshots stay small. Switching screens, the floating window view, and backup dates are not undoable. */
+const UNDO_MAX=40,NO_UNDO=['active','floatMode','lastBackup','since'],IMG=new Map(),IMGK=new Map();
+let hist=[];
+function snap(){
+  return JSON.stringify(S,function(k,v){
+    if(this===S&&NO_UNDO.includes(k))return undefined;
+    if(typeof v==='string'&&v.length>2000&&v.startsWith('data:')){
+      let id=IMGK.get(v);
+      if(!id){id='\u0001img'+IMGK.size;IMGK.set(v,id);IMG.set(id,v);}
+      return id;
+    }
+    return v;
+  });
+}
+function unsnap(str){return JSON.parse(str,(k,v)=>typeof v==='string'&&v.startsWith('\u0001img')?IMG.get(v):v);}
+function record(){
+  const x=snap();
+  if(x!==hist[hist.length-1]){hist.push(x);if(hist.length>UNDO_MAX+1)hist.shift();}
+  syncUndo();
+}
+function syncUndo(){const b=$('#bUndo');if(b)b.disabled=hist.length<2;}
+function undo(){
+  clearTimeout(saveT);flush();
+  if(hist.length<2)return;
+  hist.pop();
+  const keep={};NO_UNDO.forEach(k=>{if(k in S)keep[k]=S[k];});
+  S=normalize(Object.assign(unsnap(hist[hist.length-1]),keep));
+  if(!S.screens.some(sc=>sc.id===S.active))S.active=S.screens[0].id;
+  closePop();
+  document.body.classList.toggle('calm',!!S.calm);
+  syncBrand();renderTabs();renderBoard();
+  flush();
+  toast('Undid the last change.');
 }
 function armed(btn,label,action,armedLabel){
   let t=null;
@@ -1460,15 +1510,16 @@ brandEl.addEventListener('keydown',e=>{if(e.key==='Enter')brandEl.blur();});
 brandEl.addEventListener('blur',()=>{if(!brandEl.value.trim()){S.title='';save();syncBrand();}});
 
 /* ---------- Backup ---------- */
-function downloadBackup(){
+function downloadBackup(note){
+  S.lastBackup=Date.now();
   clearTimeout(saveT);flush();
-  const d=new Date(),day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const d=new Date(),day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+(note?' '+note:'');
   const blob=new Blob([JSON.stringify({app:'classboard',v:1,saved:d.toISOString(),data:S})],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=h('a',{href:url,download:'Classboard backup '+day+'.json'});
   document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  toast('Backup downloaded. Keep it somewhere safe, like Google Drive.');
+  toast(note?'Saved a backup of your current boards first, just in case.':'Backup downloaded. Keep it somewhere safe, like Google Drive.');
 }
 function readBackup(f){
   return f.text().then(txt=>{
@@ -1492,6 +1543,9 @@ function backupPop(anchor){
       readBackup(f).then(D=>{
         const n=(k,one,many)=>k+' '+(k===1?one:many);
         const go=h('button',{class:'btn danger',type:'button',onclick:()=>{
+          /* Download the current boards before replacing them, so an import can always be reversed. */
+          downloadBackup('before import');
+          D.lastBackup=S.lastBackup;D.since=S.since;
           S=D;Object.keys(RT).forEach(k=>delete RT[k]);
           closePop();syncBrand();document.body.classList.toggle('calm',!!S.calm);renderTabs();renderBoard();
           clearTimeout(saveT);
@@ -1500,7 +1554,7 @@ function backupPop(anchor){
         box.replaceChildren(
           h('h3',null,'Import backup'),
           h('p',null,'This file has '+n(D.screens.length,'screen','screens')+' and '+n(D.classes.length,'class','classes')+'.'),
-          h('p',null,'Importing replaces everything on this computer. Download a backup first if you want to keep what is here.'),
+          h('p',null,'Importing replaces everything on this computer. A backup of what is here now downloads first, just in case.'),
           go,
           h('button',{class:'btn',type:'button',onclick:main},'Cancel'));
         go.focus();
@@ -1678,6 +1732,7 @@ document.addEventListener('keydown',e=>{
 }));
 
 /* ---------- Toolbar wiring ---------- */
+$('#bUndo').addEventListener('click',undo);
 $('#bAdd').addEventListener('click',e=>addPop(e.currentTarget));
 $('#bGear').addEventListener('click',e=>gearPop(e.currentTarget));
 $('#bFloat').addEventListener('click',floatClock);
@@ -1688,6 +1743,14 @@ $('#pExit').addEventListener('click',()=>setPresent(false));
 $('#pCalm').addEventListener('click',()=>setCalm(!S.calm));
 
 syncBrand();
+/* Remind about backups once per visit, after the first week of use, if the last one is over two weeks old. */
+if(!S.since){S.since=Date.now();save();}
+{
+  const DAY=864e5,now=Date.now();
+  if(now-S.since>7*DAY&&(!S.lastBackup||now-S.lastBackup>14*DAY))
+    setTimeout(()=>toast(S.lastBackup?'It has been over two weeks since your last backup.':'You have not downloaded a backup yet.',{label:'Download backup',fn:()=>downloadBackup()}),2500);
+}
+record();
 if(S.calm){document.body.classList.add('calm');$('#pCalm').classList.add('primary');$('#pCalm').setAttribute('aria-pressed','true');}
 renderTabs();
 renderBoard();
