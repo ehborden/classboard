@@ -156,19 +156,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-title{border:0;background:transparent;font:700 min(7cqw,20px) var(--font-display);padding:2px 4px;width:100%;border-radius:6px}
 .ag-title:hover,.ag-title:focus{background:var(--panel2)}
 .ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:max(var(--min-text,0px),clamp(13px,4.4cqw,22px))}
-.ag-row{display:grid;grid-template-columns:24px auto minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
+.ag-row{display:grid;grid-template-columns:14px 24px minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
 /* One static accent: the current row is bold and teal. Every other row is normal weight and gray (still 7:1). */
-.ag-row .ag-txt,.ag-row .ag-time{color:var(--muted)}
-.ag-row.now .ag-txt,.ag-row.now .ag-time{font-weight:700;color:var(--accent)}
+.ag-row .ag-txt{color:var(--muted)}
+.ag-row.now .ag-txt{font-weight:700;color:var(--accent)}
+.ag-grip{cursor:grab;color:var(--muted);text-align:center;user-select:none;touch-action:none;font-size:16px;line-height:1}
+.ag-row.drag{background:var(--panel2);box-shadow:var(--shadow)}
 .present .ag-row.out{display:none}
 .present .ag-row.now{font-size:max(var(--min-now),1.5em)}
-.ag-row.done .ag-txt,.ag-row.done .ag-time{text-decoration:line-through;color:var(--muted)}
+.ag-row.done .ag-txt{text-decoration:line-through;color:var(--muted)}
 .ag-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);background:transparent;cursor:pointer;padding:0}
 .ag-chk.on{background:var(--accent);border-color:var(--accent);box-shadow:inset 0 0 0 3px var(--panel)}
-.ag-time,.ag-txt{border:0;background:transparent;padding:3px 4px;border-radius:6px;font-size:inherit;min-width:0;width:100%}
-.ag-time{width:auto;font-variant-numeric:tabular-nums}
-.ag-time::-webkit-calendar-picker-indicator{display:none}
-.ag-time:hover,.ag-txt:hover,.ag-time:focus,.ag-txt:focus{background:var(--panel)}
+.ag-txt{border:0;background:transparent;padding:3px 4px;border-radius:6px;font-size:inherit;min-width:0;width:100%}
+.ag-txt:hover,.ag-txt:focus{background:var(--panel)}
 .ag-rm{border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;width:22px;height:22px;padding:0}
 .ag-rm:hover{background:var(--line);color:var(--ink)}
 .tb:disabled{opacity:.45;cursor:default}
@@ -258,7 +258,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* Back-row sizing for a room up to 20 feet deep, on a 1080-pixel-tall projected image:
    body text about 1.3 px per foot (26px = 2.4vh) and the agenda now-line about 3.3 px per foot (66px = 6vh). */
 .present{--min-text:2.4vh;--min-now:6vh}
-.present .bar,.present .whead,.present .resize,.present .ag-rm{display:none}
+.present .bar,.present .whead,.present .resize,.present .ag-rm,.present .ag-grip{display:none}
+.present .ag-row{grid-template-columns:24px minmax(0,1fr)}
 .present .st-txt{pointer-events:none}
 
 /* Seating chart */
@@ -303,7 +304,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .present .seat-tray,.present .seat-top,.present .seat-hint,.present .seat-qs,.present .seat-x,.present .seat-rs,.present .seat-around{display:none!important}
 .present .seat-item.on{outline:0}
 .present .seat-canvas,.present .seat-label{pointer-events:none}
-.present .ag-title,.present .ag-time,.present .ag-txt{pointer-events:auto}
+.present .ag-title,.present .ag-txt{pointer-events:auto}
 
 /* Phone: widgets stack in one column */
 @media (max-width:700px){
@@ -381,10 +382,10 @@ function guideWidgets(html,items){
 function seed(){
   const cls={id:uid(),name:'Sample class',students:['Ada','Ben','Chloe','Dev','Elena','Femi','Grace','Hiro','Isla','Jamal'],absent:[]};
   const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.',[
-    {id:uid(),t:'08:30',txt:'Do now',done:false},
-    {id:uid(),t:'08:40',txt:'Mini lesson',done:false},
-    {id:uid(),t:'09:05',txt:'Practice',done:false},
-    {id:uid(),t:'09:30',txt:'Share out',done:false}])};
+    {id:uid(),txt:'Do now',done:false},
+    {id:uid(),txt:'Mini lesson',done:false},
+    {id:uid(),txt:'Practice',done:false},
+    {id:uid(),txt:'Share out',done:false}])};
   return {v:1,active:sc.id,classes:[cls],screens:[sc]};
 }
 
@@ -396,7 +397,7 @@ const TYPES={
   picker:{label:'Names and groups',desc:'Pick a name, make partners or groups',w:.44,h:.44,data:()=>({classId:S.classes[0]?S.classes[0].id:null,mode:'one',size:3,used:[],result:null}),build:buildPicker},
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
-  agenda:{label:'Agenda',desc:'Schedule with a live marker',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
+  agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic}
 };
 
@@ -798,45 +799,56 @@ function buildMusic(w,body,tools){
 }
 
 /* ---------- Agenda ---------- */
+/* No times: the first unchecked row is the current one. Rows reorder by dragging the handle on the left. */
 function buildAgenda(w,body,tools){
   const D=w.data;
   const title=h('input',{class:'ag-title',value:D.title||'','aria-label':'Agenda title'});
   title.addEventListener('input',()=>{D.title=title.value;save();});
   const list=h('div',{class:'ag-list'});
   body.append(title,list);
+  function addAfter(it){
+    const n={id:uid(),txt:'',done:false};
+    D.items.splice(it?D.items.indexOf(it)+1:D.items.length,0,n);save();drawList();
+    const r=[...list.children].find(x=>x._it===n);if(r)r._tx.focus();
+  }
   function row(it){
+    const grip=h('span',{class:'ag-grip',title:'Drag to reorder','aria-hidden':'true'},'⠇');
     const chk=h('button',{class:'ag-chk'+(it.done?' on':''),type:'button',title:'Mark done','aria-label':'Mark done','aria-pressed':String(!!it.done)});
-    const tm=h('input',{class:'ag-time',type:'time',value:it.t||'','aria-label':'Start time'});
     const tx=h('input',{class:'ag-txt',value:it.txt||'',placeholder:'Activity','aria-label':'Activity'});
     const rm=h('button',{class:'ag-rm',type:'button',title:'Delete row','aria-label':'Delete row'},'×');
-    const r=h('div',{class:'ag-row'+(it.done?' done':'')},chk,tm,tx,rm);
-    chk.addEventListener('click',()=>{it.done=!it.done;chk.classList.toggle('on',it.done);chk.setAttribute('aria-pressed',String(it.done));r.classList.toggle('done',it.done);save();});
-    tm.addEventListener('input',()=>{it.t=tm.value;save();mark();});
+    const r=h('div',{class:'ag-row'+(it.done?' done':'')},grip,chk,tx,rm);
+    chk.addEventListener('click',()=>{it.done=!it.done;chk.classList.toggle('on',it.done);chk.setAttribute('aria-pressed',String(it.done));r.classList.toggle('done',it.done);save();mark();});
     tx.addEventListener('input',()=>{it.txt=tx.value;save();});
+    tx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addAfter(it);}});
     rm.addEventListener('click',()=>{D.items=D.items.filter(i=>i!==it);r.remove();save();mark();});
+    grip.addEventListener('pointerdown',e=>{
+      if(e.button>0||presenting)return;
+      /* Listen on the document: moving the row in the page would drop pointer capture on the handle. */
+      e.preventDefault();r.classList.add('drag');
+      const mv=ev=>{
+        const rows=[...list.children].filter(x=>x!==r);
+        const after=rows.find(x=>{const b=x.getBoundingClientRect();return ev.clientY<b.top+b.height/2;});
+        if(after)list.insertBefore(r,after);else list.append(r);
+      };
+      const up=()=>{
+        document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+        r.classList.remove('drag');D.items=[...list.children].map(x=>x._it);save();mark();
+      };
+      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+    });
     r._it=it;r._tx=tx;
     return r;
   }
   function drawList(){list.replaceChildren(...D.items.map(row));mark();}
   function mark(){
-    const n=new Date(),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-    let best=null;
-    [...list.children].forEach(r=>{r.classList.remove('now');if(r._it.t&&r._it.t<=hm&&(!best||r._it.t>=best._it.t))best=r;});
-    if(best) best.classList.add('now');
-    /* Present mode shows only the current row and the next two. Before the first start time, it shows the first three. */
-    const rows=[...list.children],i=best?rows.indexOf(best):0;
+    const rows=[...list.children],cur=rows.find(r=>!r._it.done);
+    rows.forEach(r=>r.classList.toggle('now',r===cur));
+    /* Present mode shows the current row and the next two. When everything is checked, it shows the last three. */
+    const i=cur?rows.indexOf(cur):Math.max(0,rows.length-3);
     rows.forEach((r,k)=>r.classList.toggle('out',k<i||k>i+2));
   }
-  tools.append(
-    tbtn('+ Row','Add a row',()=>{
-      const it={id:uid(),t:'',txt:'',done:false};D.items.push(it);
-      const r=row(it);list.append(r);r._tx.focus();r.scrollIntoView({block:'nearest'});save();
-    }),
-    tbtn('Sort','Sort rows by time',()=>{
-      D.items.sort((a,b)=>(a.t||'99:99').localeCompare(b.t||'99:99'));drawList();save();
-    })
-  );
-  drawList();ticks.push(mark);
+  tools.append(tbtn('+ Row','Add a row',()=>addAfter(null)));
+  drawList();
 }
 
 /* ---------- Task steps ---------- */
