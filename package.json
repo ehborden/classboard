@@ -1,0 +1,16 @@
+{
+  "name": "classboard",
+  "private": true,
+  "description": "Development tests for Classboard. The app itself is index.html and needs none of this.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "pdfjs-dist": "3.11.174",
+    "tesseract.js": "5.1.1",
+    "tesseract.js-core": "5.1.1",
+    "xlsx": "0.18.5"
+  }
+}

@@ -1710,7 +1710,7 @@ function backupPop(anchor){
     const main=()=>box.replaceChildren(
       h('h3',null,'Backup'),
       h('p',null,'Saves every screen, widget, image, and class list to one file.'),
-      h('button',{class:'btn primary',type:'button',onclick:downloadBackup},'Download backup'),
+      h('button',{class:'btn primary',type:'button',onclick:()=>downloadBackup()},'Download backup'),
       h('button',{class:'btn',type:'button',onclick:()=>file.click()},'Import backup'),
       file);
     file.addEventListener('change',()=>{
