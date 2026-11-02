@@ -239,6 +239,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .cl-row{display:flex;gap:6px;align-items:center}
 .cl-row .fld{flex:1;min-width:0}
 .cl-paste{display:flex;flex-direction:column;gap:6px}
+.cl-more{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.cl-fmt{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+.cl-fmt .seg button{font-size:13px;padding:4px 9px}
 .cl-roster{margin:0;padding:6px;list-style:none;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:8px}
 .cl-roster li{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:6px}
 .cl-roster li:hover{background:var(--panel2)}
@@ -1278,6 +1281,148 @@ function buildPicker(w,body,tools,el){
   draw();
 }
 
+/* ---------- Reading names from lists, spreadsheets, PDFs, and photos ---------- */
+/* Everything runs in this browser. Libraries load from a CDN only when a file type needs them,
+   and student names are never sent anywhere. */
+const LIBS={
+  xlsx:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfWorker:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+  ocrWorker:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+  ocrCore:'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
+  ocrLang:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int'
+};
+const loadedLibs={};
+function loadScript(src){
+  return loadedLibs[src]||(loadedLibs[src]=new Promise((res,rej)=>{
+    const sc=document.createElement('script');sc.src=src;sc.onload=res;
+    sc.onerror=()=>{delete loadedLibs[src];sc.remove();rej(new Error('Could not load a helper. Check the internet connection.'));};
+    document.head.append(sc);
+  }));
+}
+/* Column labels, titles, and school subjects that should never be read as a student's name. */
+const NOT_NAMES=/^(name|names|student|students|first|last|first name|last name|full name|class|period|grade|roster|teacher|room|advisor|advisory|homeroom|section|page|date|email|id|total|list|english|math|mathematics|algebra|geometry|calculus|science|biology|chemistry|physics|history|spanish|french|latin|chinese|humanities|ela|social studies)$/i;
+const titleCase=w=>w===w.toUpperCase()&&w.length>1?w.charAt(0)+w.slice(1).toLowerCase():w;
+/* One line of text to {first,last}, or null if it does not look like a name.
+   Handles numbering and bullets, "Last, First", and stray emails or ID numbers after the name. */
+function nameFromLine(line){
+  let t=String(line).replace(/\t+/g,' ').replace(/^\s*(\(?\d{1,3}[.)\]:-]?|[-*•●·])\s+/,'').trim();
+  t=t.split(/\s+/).filter((w,i,a)=>{if(/[\d@]/.test(w)){a.length=i;return false;}return true;}).join(' ');
+  t=t.replace(/[|;:_]+.*$/,'').replace(/\s+/g,' ').trim().replace(/^[^A-Za-zÀ-ɏ]+|[^A-Za-zÀ-ɏ.'’)]+$/g,'');
+  if(!t||NOT_NAMES.test(t)||t.split(/[\s,]+/).some(w=>NOT_NAMES.test(w)))return null;
+  let first,last;
+  const c=t.split(',');
+  if(c.length===2){last=c[0].trim();first=c[1].trim();}
+  else if(c.length===1){const w=t.split(' ');first=w[0];last=w.slice(1).join(' ');}
+  else return null;
+  const all=(first+' '+last).trim().split(' ');
+  if(!first||all.length>4||!all.every(w=>/^[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ.'’()-]*$/.test(w)))return null;
+  return {first:first.split(' ').map(titleCase).join(' '),last:last.split(' ').filter(Boolean).map(titleCase).join(' ')};
+}
+/* Rows of cells to names. Uses a header row when there is one: First and Last columns, a Preferred
+   first name if present, or a single Name column. Without a header, each row is read as one name. */
+function namesFromRows(rows){
+  rows=rows.map(r=>r.map(c=>String(c==null?'':c).trim())).filter(r=>r.some(Boolean));
+  const hi=rows.slice(0,6).findIndex(r=>r.some(c=>/name|first|last|student/i.test(c)&&c.length<40));
+  const out=[];
+  if(hi>=0){
+    const hd=rows[hi].map(c=>c.toLowerCase());
+    const col=re=>hd.findIndex(c=>re.test(c));
+    const pref=col(/preferred|nickname/),fi=col(/first|given/),la=col(/last|surname|family/),
+          full=col(/^(student\s*)?(full\s*)?name$|^student$|^name/);
+    rows.slice(hi+1).forEach(r=>{
+      const f=(pref>=0&&r[pref])||(fi>=0&&r[fi])||'';
+      if(f&&la>=0){const n=nameFromLine(f+' '+r[la]);if(n){n.first=titleCase(f.split(' ')[0]);n.last=r[la].split(' ').map(titleCase).join(' ');out.push(n);}}
+      else if(full>=0&&r[full]){const n=nameFromLine(r[full]);if(n)out.push(n);}
+      else if(f){const n=nameFromLine(f);if(n)out.push(n);}
+    });
+  }else rows.forEach(r=>{const n=nameFromLine(r.filter(Boolean).join(' '));if(n)out.push(n);});
+  const seen=new Set();
+  return out.filter(n=>{const k=(n.first+' '+n.last).toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+}
+function parseCSV(text,sep){
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;}
+    else if(ch==='"')q=true;
+    else if(ch===sep){row.push(cell);cell='';}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}
+    else cell+=ch;
+  }
+  row.push(cell);rows.push(row);
+  return rows;
+}
+/* Plain text (pasted, or read from a PDF or photo) to names. Tabbed text is read as a table. */
+function namesFromText(text){
+  const lines=String(text).split(/\r?\n/);
+  if(lines.filter(l=>l.includes('\t')).length>=2) return namesFromRows(parseCSV(text,'\t'));
+  /* Not a table: read each line on its own, skipping titles and column labels. */
+  const seen=new Set();
+  return lines.map(nameFromLine).filter(n=>{if(!n)return false;const k=(n.first+' '+n.last).toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+}
+async function ocrImages(images,progress){
+  await loadScript(LIBS.ocr);
+  const worker=await Tesseract.createWorker('eng',1,{workerPath:LIBS.ocrWorker,corePath:LIBS.ocrCore,langPath:LIBS.ocrLang,
+    logger:m=>{if(m.status==='recognizing text')progress('Reading the text... '+Math.round(m.progress*100)+'%');else progress('Getting the text reader ready...');}});
+  let text='';
+  try{for(const im of images){const r=await worker.recognize(im);text+=r.data.text+'\n';}}
+  finally{await worker.terminate();}
+  return text;
+}
+async function readPDF(file,progress){
+  await loadScript(LIBS.pdf);
+  pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS.pdfWorker;
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  let text='';
+  for(let i=1;i<=doc.numPages;i++){
+    const page=await doc.getPage(i),tc=await page.getTextContent(),lines=new Map();
+    tc.items.forEach(it=>{const y=Math.round(it.transform[5]);if(!lines.has(y))lines.set(y,[]);lines.get(y).push(it);});
+    [...lines.keys()].sort((a,b)=>b-a).forEach(y=>{text+=lines.get(y).sort((a,b)=>a.transform[4]-b.transform[4]).map(it=>it.str).join(' ')+'\n';});
+  }
+  if(text.replace(/\s/g,'').length>20) return text;
+  /* A scanned PDF has no text layer, so read each page as a picture. */
+  const canvases=[];
+  for(let i=1;i<=Math.min(doc.numPages,10);i++){
+    const page=await doc.getPage(i),vp=page.getViewport({scale:2}),c=document.createElement('canvas');
+    c.width=vp.width;c.height=vp.height;
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    canvases.push(c);
+  }
+  return ocrImages(canvases,progress);
+}
+async function namesFromFile(file,progress){
+  const n=file.name.toLowerCase(),t=file.type;
+  if(/\.(xlsx|xls|ods)$/.test(n)){
+    progress('Opening the spreadsheet...');
+    await loadScript(LIBS.xlsx);
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+    return namesFromRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}));
+  }
+  if(/\.(csv|tsv)$/.test(n)||t==='text/csv'){
+    const txt=await file.text();
+    return namesFromRows(parseCSV(txt,/\.tsv$/.test(n)||(!txt.includes(',')&&txt.includes('\t'))?'\t':','));
+  }
+  if(/\.pdf$/.test(n)||t==='application/pdf'){progress('Reading the PDF...');return namesFromText(await readPDF(file,progress));}
+  if(t.startsWith('image/')){progress('Getting the text reader ready...');return namesFromText(await ocrImages([file],progress));}
+  if(/\.(txt|text)$/.test(n)||t.startsWith('text/'))return namesFromText(await file.text());
+  throw new Error('That file type is not supported. Use a CSV, Excel, PDF, or picture.');
+}
+/* How names appear in the class list. "first" adds a last initial when two students share a first name. */
+function formatNames(people,fmt){
+  const count={};people.forEach(p=>{const k=p.first.toLowerCase();count[k]=(count[k]||0)+1;});
+  return people.map(p=>{
+    const ini=p.last?p.last.charAt(0).toUpperCase():'';
+    if(fmt==='full')return (p.first+' '+p.last).trim();
+    if(fmt==='first'&&count[p.first.toLowerCase()]<2)return p.first;
+    return (p.first+(ini?' '+ini:'')).trim();
+  });
+}
+
+/* Read-only hooks for the automated tests in tests/. */
+window.classboardTest={nameFromLine,namesFromRows,namesFromText,parseCSV,formatNames};
+
 /* ---------- Classes dialog ---------- */
 function classesChanged(){save();classHooks.forEach(f=>{try{f();}catch(e){}});}
 function openClasses(focusId){
@@ -1286,7 +1431,7 @@ function openClasses(focusId){
   const box=h('div',{class:'modal',role:'dialog','aria-modal':'true','aria-label':'Classes'});
   back.append(box);document.body.append(back);
   let selId=(focusId&&S.classes.some(c=>c.id===focusId))?focusId:(S.classes[0]&&S.classes[0].id);
-  let pasting=false;
+  let pasting=false,people=null,fmt='initial',pasteVal='';
   const close=()=>{back.remove();document.removeEventListener('keydown',onKey,true);};
   const onKey=e=>{if(e.key==='Escape'){e.stopPropagation();close();}};
   document.addEventListener('keydown',onKey,true);
@@ -1340,18 +1485,44 @@ function openClasses(focusId){
         });
         return h('li',null,h('span',{class:'cl-n'},(i+1)+'.'),h('span',{class:'cl-nm'},n),rm);
       }));
+      /* Review box: pasted or imported names land here to be checked and fixed before they are added. */
       let pasteBox=null;
+      const fileIn=h('input',{type:'file',hidden:true,accept:'.csv,.tsv,.txt,.xlsx,.xls,.ods,.pdf,image/*','aria-label':'Choose a roster file or picture'});
+      const takeFile=f=>{
+        if(!f)return;
+        const say=t=>{const x=$('#clMsg',box);if(x)x.textContent=t;};
+        say('Reading '+(f.name||'the picture')+'...');
+        namesFromFile(f,say).then(list=>{
+          if(!list.length){say('No names found in that file. Try another file, or type the names.');return;}
+          people=list;pasting=true;pasteVal='';render();
+          say('Found '+list.length+(list.length===1?' name':' names')+'. Check the list, fix anything that looks wrong, then click Add these names.');
+        }).catch(e=>say(e&&e.message?e.message:'Could not read that file.'));
+      };
+      fileIn.addEventListener('change',()=>{takeFile(fileIn.files[0]);fileIn.value='';});
       if(pasting){
-        const ta=h('textarea',{class:'fld',rows:'6','aria-label':'Paste names, one per line',placeholder:'Paste names here, one per line'});
-        pasteBox=h('div',{class:'cl-paste'},ta,
+        const ta=h('textarea',{class:'fld',rows:'8','aria-label':'Names, one per line',placeholder:'Paste names here, one per line'});
+        ta.value=people?formatNames(people,fmt).join('\n'):pasteVal;
+        ta.addEventListener('input',()=>{pasteVal=ta.value;});
+        /* A pasted list is cleaned up the same way as an imported file. */
+        ta.addEventListener('paste',e=>{
+          const cd=e.clipboardData;if(!cd)return;
+          const img=[...(cd.items||[])].find(i=>i.type.startsWith('image/'));
+          if(img){e.preventDefault();takeFile(img.getAsFile());return;}
+          const list=namesFromText(cd.getData('text/plain'));
+          if(list.length){e.preventDefault();people=(people||[]).concat(list);render();}
+        });
+        const fmtSeg=people&&people.some(p=>p.last)?h('div',{class:'cl-fmt'},h('span',null,'Show names as'),
+          h('div',{class:'seg',role:'group','aria-label':'Name format'},[['full','Full name'],['initial','First name and last initial'],['first','First name only']].map(([k,l])=>
+            h('button',{type:'button',class:fmt===k?'on':'','aria-pressed':String(fmt===k),onclick:()=>{fmt=k;render();}},l)))):null;
+        pasteBox=h('div',{class:'cl-paste'},fmtSeg,ta,
           h('div',{class:'cl-row'},
             h('button',{class:'btn primary',type:'button',onclick:()=>{
-              const before=cls.students.length,sk=addNames(cls,ta.value.split(/\r?\n|\t|,/));
-              pasting=false;render();
+              const before=cls.students.length,sk=addNames(cls,ta.value.split(/\r?\n/).map(l=>l.replace(/\t+/g,' ')));
+              pasting=false;people=null;pasteVal='';render();
               const m=$('#clMsg',box);if(m)m.textContent='Added '+(cls.students.length-before)+'.'+(sk?' Skipped '+sk+' already in the class.':'');
             }},'Add these names'),
-            h('button',{class:'btn',type:'button',onclick:()=>{pasting=false;render();}},'Cancel')));
-        setTimeout(()=>ta.focus(),0);
+            h('button',{class:'btn',type:'button',onclick:()=>{pasting=false;people=null;pasteVal='';render();}},'Cancel')));
+        if(!people)setTimeout(()=>ta.focus(),0);
       }
       const del=h('button',{class:'btn',type:'button'},'Delete class');
       armed(del,'Delete class',()=>{
@@ -1362,7 +1533,11 @@ function openClasses(focusId){
         h('label',{for:'clName'},'Class name'),name,
         h('label',{for:'clOne'},'Students ('+cls.students.length+')'),
         h('div',{class:'cl-row'},one,h('button',{class:'btn primary',type:'button',onclick:addOne},'Add')),
-        pasteBox||h('button',{class:'lnk',type:'button',onclick:()=>{pasting=true;render();}},'Or paste a whole list, like a column from a spreadsheet'),
+        pasteBox||h('div',{class:'cl-more'},
+          h('button',{class:'btn',type:'button',onclick:()=>fileIn.click()},'Import from a file or photo'),
+          h('button',{class:'lnk',type:'button',onclick:()=>{pasting=true;render();}},'Or paste a list')),
+        fileIn,
+        pasteBox?null:h('div',{class:'cl-count'},'Works with CSV, Excel, PDF, or a photo or screenshot of a roster. Names are read on this computer and never sent anywhere.'),
         msg,
         cls.students.length?roster:h('div',{class:'cl-empty'},'No students yet.'),
         h('div',{class:'cl-foot'},del));
