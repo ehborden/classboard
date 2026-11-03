@@ -93,5 +93,44 @@ test('calm mode keeps a clock on screen and turns music off', async ({ page }) =
 test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await openApp(page);
   await page.click('#bAdd');
-  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music']);
+  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides']);
+});
+
+test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
+  await openApp(page);
+  const r = await page.evaluate(() => {
+    const f = window.classboardTest.slidesURL;
+    return [
+      f('<iframe src="https://onedrive.live.com/embed?resid=ABC%21123&amp;authkey=!xyz&amp;em=2" width="402" height="327"></iframe>'),
+      f('https://onedrive.live.com/redir?resid=ABC%21123&authkey=!xyz'),
+      f('https://yorkprep-my.sharepoint.com/:p:/g/personal/teacher/EXabc?e=k1'),
+      f('https://yorkprep.sharepoint.com/_layouts/15/Doc.aspx?sourcedoc={1}&action=edit'),
+      f('https://docs.google.com/presentation/d/1AbC_d-9/edit#slide=id.p'),
+      f('https://docs.google.com/presentation/d/e/2PACX-1vT/pub?start=false'),
+      f('https://1drv.ms/p/s!abc'),
+      f('https://example.com/deck.pptx'),
+    ].map(x => x.src || 'ERROR: ' + x.error);
+  });
+  expect(r[0]).toBe('https://onedrive.live.com/embed?resid=ABC%21123&authkey=!xyz&em=2');
+  expect(r[1]).toBe('https://onedrive.live.com/embed?resid=ABC%21123&authkey=!xyz&em=2');
+  expect(r[2]).toBe('https://yorkprep-my.sharepoint.com/:p:/g/personal/teacher/EXabc?e=k1&action=embedview');
+  expect(r[3]).toBe('https://yorkprep.sharepoint.com/_layouts/15/Doc.aspx?sourcedoc={1}&action=embedview');
+  expect(r[4]).toBe('https://docs.google.com/presentation/d/1AbC_d-9/embed?start=false&loop=false');
+  expect(r[5]).toBe('https://docs.google.com/presentation/d/e/2PACX-1vT/embed?start=false&loop=false');
+  expect(r[6]).toMatch(/^ERROR: Short 1drv\.ms links/);
+  expect(r[7]).toMatch(/^ERROR: That link is not from OneDrive/);
+});
+
+test('slides: pasting a link shows the deck, and Change keeps a way back', async ({ page }) => {
+  await page.route(/onedrive\.live\.com|sharepoint\.com/, route => route.fulfill({ body: '<p>slides</p>', contentType: 'text/html' }));
+  await openApp(page, board([widget('slides', { url: '' }, [0.05, 0.05, 0.6, 0.7])]));
+  await page.fill('.slides textarea', 'https://example.com/x');
+  await page.click('.slides >> text=Show slides');
+  await expect(page.locator('.slides .sl-err')).toContainText('not from OneDrive');
+  await page.fill('.slides textarea', 'https://yorkprep-my.sharepoint.com/:p:/g/personal/teacher/EXabc?e=k1');
+  await page.click('.slides >> text=Show slides');
+  await expect(page.locator('.slides iframe')).toHaveAttribute('src', /action=embedview/);
+  await page.click('[title="Use a different presentation"]');
+  await page.click('.slides >> text=Back to the slides');
+  await expect(page.locator('.slides iframe')).toHaveCount(1);
 });

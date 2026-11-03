@@ -41,6 +41,7 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Seating chart.** Step 1, set up the room: start from rows of desks or table groups, then move pieces to match. Step 2, seat students by dragging names or clicking a name and then a chair. Each class keeps its own seats in the same room.
 - **Names and groups.** Pick a name, make partners, or make groups, skipping absent students.
 - **Classes.** Add students one at a time, paste a list, or **Import from a file or photo**: CSV, Excel, PDF, or a picture or screenshot of a roster. Photos and scanned PDFs are read inside your browser, so names never leave the computer. Everything goes to a review box first, where you choose full names, first name and last initial, or first names only.
+- **Slides.** Show a PowerPoint from OneDrive on the board, with PowerPoint's own next and back controls. In PowerPoint for the web, use File, then Share, then Embed, and paste the code; a share link works too. The file usually needs to be shared as "Anyone with the link can view." Google Slides links also work. A .pptx file cannot be opened directly in a browser.
 - **Calm mode** turns off sound, motion, and music, and always keeps a clock on screen.
 - **Board name.** Click "Classboard" in the top left to rename it, for example "Room 204."
 

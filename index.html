@@ -148,6 +148,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .music .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .music .pk-chips{justify-content:center;align-items:center}
 .music-frame{flex:1;width:100%;min-height:0;border:0;display:block}
+.slides .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.slides .pk-chips{justify-content:center;align-items:center}
+.sl-start{gap:8px;overflow:auto}
+.sl-steps{margin:0;padding-left:1.3em;text-align:left;max-width:30em;color:var(--ink)}
+.sl-fld{max-width:34em;resize:vertical}
+.sl-err{color:var(--ink);font-weight:600}
 .imgwrap img{width:100%;height:100%;object-fit:contain;display:block}
 .dz{flex:1;margin:10px;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:10px;color:var(--muted)}
 
@@ -403,7 +409,8 @@ const TYPES={
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
-  music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic}
+  music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
+  slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive, or Google Slides',w:.63,h:.80,data:()=>({url:''}),build:buildSlides}
 };
 
 /* Fill in missing fields so saved or imported data is safe to render. */
@@ -844,6 +851,81 @@ function buildMusic(w,body,tools){
       h('div',{class:'row'},h('button',{class:'btn primary',type:'button',onclick:go},'Play'),
         src?h('button',{class:'btn',type:'button',onclick:()=>{editing=false;draw();}},'Back to what was playing'):null),
       err,
+      recent.length?h('div',{class:'pk-chips'},h('span',{class:'cl-count'},'Recent:'),
+        recent.map(u=>h('button',{class:'chip',type:'button',title:u,onclick:()=>use(u)},label(u)))):null));
+    if(editing) setTimeout(()=>fld.focus(),0);
+  }
+  draw();
+}
+
+/* ---------- Slides ---------- */
+/* Turns a PowerPoint for the web link, its Embed code, or a Google Slides link into an address that can
+   play inside the board. Returns {src} or {error} with what to do instead. */
+function slidesURL(raw){
+  raw=String(raw||'').trim();
+  const fr=raw.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  if(fr) raw=fr[1].replace(/&amp;/g,'&');
+  let u;try{u=new URL(raw);}catch(e){return {error:'Paste a link that starts with https, or the Embed code from PowerPoint.'};}
+  const host=u.hostname.toLowerCase();
+  if(u.protocol!=='https:')return {error:'Paste a link that starts with https.'};
+  if(host==='1drv.ms')return {error:'Short 1drv.ms links cannot open here. In PowerPoint for the web, use File, then Share, then Embed, and paste that code instead.'};
+  if(host==='docs.google.com'){
+    const m=u.pathname.match(/\/presentation\/d\/(e\/)?([\w-]+)/);
+    if(!m)return {error:'That Google link is not a Slides presentation.'};
+    return {src:'https://docs.google.com/presentation/d/'+(m[1]||'')+m[2]+'/embed?start=false&loop=false'};
+  }
+  /* Change only what has to change, so share keys stay exactly as Microsoft wrote them. */
+  const setParam=(url,k,v)=>{
+    const re=new RegExp('([?&])'+k+'=[^&#]*');
+    if(re.test(url))return url.replace(re,'$1'+k+'='+v);
+    const hash=url.indexOf('#'),base=hash<0?url:url.slice(0,hash),tail=hash<0?'':url.slice(hash);
+    return base+(base.includes('?')?'&':'?')+k+'='+v+tail;
+  };
+  if(host==='onedrive.live.com'){
+    const out=raw.replace(/^(https:\/\/onedrive\.live\.com)\/[^?#]*/i,'$1/embed');
+    return {src:setParam(out,'em','2')};
+  }
+  if(host.endsWith('.sharepoint.com')||host.endsWith('.officeapps.live.com')){
+    return {src:setParam(raw,'action','embedview')};
+  }
+  return {error:'That link is not from OneDrive, SharePoint, or Google Slides.'};
+}
+function buildSlides(w,body,tools){
+  body.classList.add('flush');
+  let editing=false;
+  const changeB=tbtn('Change','Use a different presentation',()=>{editing=true;draw();});
+  tools.append(changeB);
+  function use(u){
+    w.data.url=u;
+    w.data.recent=[u,...(w.data.recent||[]).filter(x=>x!==u)].slice(0,5);
+    editing=false;save();draw();
+  }
+  function draw(){
+    const got=w.data.url&&slidesURL(w.data.url),src=got&&got.src;
+    changeB.hidden=!src||editing;
+    if(src&&!editing){
+      body.replaceChildren(h('iframe',{class:'music-frame',src,title:'Slides',allowfullscreen:true,
+        allow:'fullscreen',referrerpolicy:'strict-origin-when-cross-origin'}));
+      return;
+    }
+    const fld=h('textarea',{class:'fld sl-fld',rows:'2',placeholder:'Paste the Embed code or a share link','aria-label':'PowerPoint Embed code or link'});
+    const err=h('div',{class:'cl-count sl-err'});
+    const go=()=>{const r=slidesURL(fld.value);if(r.error){err.textContent=r.error;return;}use(fld.value.trim());};
+    fld.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go();}if(e.key==='Escape'&&src){e.stopPropagation();editing=false;draw();}});
+    fld.addEventListener('paste',()=>setTimeout(()=>{if(slidesURL(fld.value).src)go();},0));
+    const recent=(w.data.recent||[]).filter(u=>u!==w.data.url||!src);
+    const label=u=>{const r=slidesURL(u);try{const x=new URL(r.src);return (x.hostname.includes('google')?'Google Slides ':'PowerPoint ')+(recent.indexOf(u)+1);}catch(e){return 'Presentation';}};
+    body.replaceChildren(h('div',{class:'dz sl-start'},
+      h('b',null,'Show a PowerPoint'),
+      h('ol',{class:'sl-steps'},
+        h('li',null,'Open the presentation in PowerPoint for the web (OneDrive).'),
+        h('li',null,'Click File, then Share, then Embed, and copy the code.'),
+        h('li',null,'Paste it below. A share link works too.')),
+      fld,
+      h('div',{class:'row'},h('button',{class:'btn primary',type:'button',onclick:go},'Show slides'),
+        src?h('button',{class:'btn',type:'button',onclick:()=>{editing=false;draw();}},'Back to the slides'):null),
+      err,
+      h('div',{class:'cl-count'},'If the slides do not appear, set the file to Anyone with the link can view, then try again. Google Slides links work too.'),
       recent.length?h('div',{class:'pk-chips'},h('span',{class:'cl-count'},'Recent:'),
         recent.map(u=>h('button',{class:'chip',type:'button',title:u,onclick:()=>use(u)},label(u)))):null));
     if(editing) setTimeout(()=>fld.focus(),0);
@@ -1421,7 +1503,7 @@ function formatNames(people,fmt){
 }
 
 /* Read-only hooks for the automated tests in tests/. */
-window.classboardTest={nameFromLine,namesFromRows,namesFromText,parseCSV,formatNames};
+window.classboardTest={nameFromLine,namesFromRows,namesFromText,parseCSV,formatNames,slidesURL};
 
 /* ---------- Classes dialog ---------- */
 function classesChanged(){save();classHooks.forEach(f=>{try{f();}catch(e){}});}
@@ -1582,7 +1664,8 @@ const ICONS={
   text:'<path d="M4 6h16M4 11h16M4 16h16M4 21h9"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5L5 20"/>',
   agenda:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17.5h6"/>',
-  music:'<path d="M9 18V5.5l11-2.5v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'
+  music:'<path d="M9 18V5.5l11-2.5v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  slides:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 8l4 2-4 2z"/>'
 };
 function icon(k){
   const i=h('span',{class:'opt-ic','aria-hidden':'true'});
@@ -1590,7 +1673,7 @@ function icon(k){
   return i;
 }
 /* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
-const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music'];
+const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides'];
 function addPop(anchor){
   openPop(anchor,box=>{
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
