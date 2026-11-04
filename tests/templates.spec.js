@@ -6,8 +6,10 @@ test('save a screen as a template, then start a new screen from it with its cont
     widget('agenda', { title: 'Warm up', items: [{ id: 'a', txt: 'Warm up', done: false }] }),
     widget('timer', { dur: 420 }, [0.5, 0.1, 0.3, 0.6]),
   ]));
-  // With no templates yet, + makes a default screen right away.
+  // With no templates yet, + still offers the starting points and a way to save one.
   await page.click('.tab.add');
+  await expect(page.locator('.pop')).toContainText('None yet');
+  await page.click('.pop .opt >> text=Default layout');
   await expect(page.locator('.widget .wlabel')).toHaveText(['Agenda', 'Text box', 'Clock', 'Timer']);
   await page.click('.tab >> text=Screen 1');
 

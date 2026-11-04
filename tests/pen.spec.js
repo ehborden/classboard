@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, stored } = require('./helpers');
+const { openApp, stored, addScreen } = require('./helpers');
 
 const inked = page => page.evaluate(() => {
   const c = document.querySelector('.pen-layer'); if (!c) return 0;
@@ -40,6 +40,6 @@ test('pen marks clear on a screen switch and are never saved', async ({ page }) 
   await expect(page.locator('.pen-bar')).toBeHidden();
   const s = await stored(page);
   expect(JSON.stringify(s)).not.toMatch(/strokes|pts/);
-  await page.click('.tab.add');
+  await addScreen(page);
   expect(await inked(page)).toBe(0);
 });

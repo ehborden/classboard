@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
-const { openApp, stored, settle } = require('./helpers');
+const { openApp, stored, settle, addScreen } = require('./helpers');
 
 test('download a backup, change the board, then import it back', async ({ page }, info) => {
   const errors = await openApp(page);
@@ -9,7 +9,7 @@ test('download a backup, change the board, then import it back', async ({ page }
   expect(dl.suggestedFilename()).toMatch(/^Classboard backup \d{4}-\d{2}-\d{2}\.json$/);
   const file = info.outputPath('backup.json'); await dl.saveAs(file);
 
-  await page.click('.tab.add');
+  await addScreen(page);
   await expect(page.locator('.tab:not(.add)')).toHaveCount(2);
 
   await page.click('#bGear'); await page.click('.pop >> text=Backup');
@@ -46,7 +46,7 @@ test('Undo brings back a removed widget, and Cmd+Z works outside text fields', a
 
 test('switching screens is not an undo step', async ({ page }) => {
   await openApp(page);
-  await page.click('.tab.add'); await settle(page);
+  await addScreen(page); await settle(page);
   await page.click('.tab >> text=Screen 1'); await settle(page);
   await page.click('#bUndo');
   await expect(page.locator('.tab:not(.add)')).toHaveCount(1);

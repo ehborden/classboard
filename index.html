@@ -61,10 +61,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand:hover{border-color:var(--line)}
 .brand:focus{border-color:var(--accent);background:var(--panel)}
 .tabs{flex:1 1 220px;min-width:0;display:flex;gap:4px;overflow-x:auto;padding:2px}
-.tab{flex:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 14px;cursor:pointer;white-space:nowrap}
+.tab{flex:none;display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:999px;white-space:nowrap}
 .tab:hover{background:var(--panel2)}
 .tab.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
-.tab.add{padding:5px 11px;color:var(--muted)}
+.tab-name{border:0;background:transparent;color:inherit;font-weight:inherit;padding:5px 14px;cursor:pointer;border-radius:999px}
+.tab-edit{border:0;background:var(--panel);color:var(--ink);font-weight:600;padding:5px 10px;border-radius:999px;margin:1px;min-width:0}
+.tab-x{border:0;background:transparent;color:inherit;cursor:pointer;border-radius:999px;padding:3px 9px 3px 0;margin-left:-8px;font:inherit;line-height:1;visibility:hidden}
+.tab-x::before{content:'\00d7';font-size:15px}
+.tab-x.danger{visibility:visible;padding:3px 9px;margin:2px 3px 2px -4px;font-size:12px}
+.tab-x.danger::before{content:none}
+.tab.on .tab-x,.tab:hover .tab-x,.tab-x:focus-visible{visibility:visible}
+.tab.add{padding:5px 11px;color:var(--muted);cursor:pointer}
 .acts{display:flex;flex-wrap:wrap;gap:6px}
 .btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer}
 .btn:hover:not(:disabled){background:var(--panel2)}
@@ -483,12 +490,12 @@ const TYPES={
   image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
-  slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive, or Google Slides',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
+  slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
   cam:{label:'Document camera',desc:'Show a live camera, like a document camera',w:.5,h:.6,data:()=>({on:false,deviceId:'',mirror:false,flip:false}),build:(w,b,t,el)=>buildCam(w,b,t,el)},
   points:{label:'Points',desc:'The class works toward a goal, or keep team scores',w:.36,h:.46,
     data:()=>({mode:'class',goal:20,reward:'5 free minutes',pts:0,teams:[{id:uid(),name:'Team 1',pts:0},{id:uid(),name:'Team 2',pts:0}]}),build:(w,b,t)=>buildPoints(w,b,t)},
   dice:{label:'Dice',desc:'Roll 1 to 6 dice with 4 to 20 sides',w:.30,h:.38,data:()=>({n:2,sides:6,vals:[]}),build:(w,b,t)=>buildDice(w,b,t)},
-  doc:{label:'Document',desc:'Show a Word file or PDF from OneDrive, or a Google Doc',w:.55,h:.85,data:()=>({url:''}),build:(w,b,t)=>buildDoc(w,b,t)}
+  doc:{label:'Document',desc:'Show a Word file or PDF from OneDrive, or upload a PDF to mark up',w:.55,h:.85,data:()=>({url:''}),build:(w,b,t)=>buildDoc(w,b,t)}
 };
 
 /* Fill in missing fields so saved or imported data is safe to render. */
@@ -1199,8 +1206,8 @@ function buildDice(w,body){
 }
 
 /* ---------- Slides and Document ---------- */
-/* Turns a Microsoft 365 link (PowerPoint, Word, Excel, or PDF in OneDrive or SharePoint), its Embed code,
-   or a Google Slides, Docs, Sheets, or Drive link into an address that can play inside the board.
+/* Turns a Microsoft 365 link (PowerPoint, Word, Excel, or PDF in OneDrive or SharePoint), or its Embed
+   code, into an address that can play inside the board.
    Returns {src} or {error} with what to do instead. */
 function officeURL(raw){
   raw=String(raw||'').trim();
@@ -1210,17 +1217,6 @@ function officeURL(raw){
   const host=u.hostname.toLowerCase();
   if(u.protocol!=='https:')return {error:'Paste a link that starts with https.'};
   if(host==='1drv.ms')return {error:'Short 1drv.ms links cannot open here. In the web app, use File, then Share, then Embed, and paste that code instead.'};
-  if(host==='docs.google.com'){
-    const m=u.pathname.match(/\/(presentation|document|spreadsheets)\/d\/(e\/)?([\w-]+)/);
-    if(!m)return {error:'That Google link is not a Slides, Docs, or Sheets file.'};
-    const base='https://docs.google.com/'+m[1]+'/d/'+(m[2]||'')+m[3];
-    if(m[1]==='presentation')return {src:base+'/embed?start=false&loop=false'};
-    return {src:base+(m[2]?'/pubhtml?widget=true':'/preview')};
-  }
-  if(host==='drive.google.com'){
-    const m=u.pathname.match(/\/file\/d\/([\w-]+)/)||[null,u.searchParams.get('id')];
-    return m[1]?{src:'https://drive.google.com/file/d/'+m[1]+'/preview'}:{error:'That Google Drive link does not point to a file.'};
-  }
   /* Change only what has to change, so share keys stay exactly as Microsoft wrote them. */
   const setParam=(url,k,v)=>{
     const re=new RegExp('([?&])'+k+'=[^&#]*');
@@ -1235,12 +1231,12 @@ function officeURL(raw){
   if(host.endsWith('.sharepoint.com')||host.endsWith('.officeapps.live.com')){
     return {src:setParam(raw,'action','embedview')};
   }
-  return {error:'That link is not from OneDrive, SharePoint, or Google.'};
+  return {error:'That link is not from OneDrive or SharePoint. Open the file in OneDrive and copy its link from there.'};
 }
 /* What each link widget says. The two share everything else. */
 const LINKDOC={
-  slides:{title:'Show a PowerPoint',what:'presentation',app:'PowerPoint',hint:'Google Slides links work too.'},
-  doc:{title:'Show a document',what:'document',app:'Word or PowerPoint',hint:'PDFs in OneDrive, and Google Docs, Sheets, and Drive links work too.'}
+  slides:{title:'Show a PowerPoint',what:'presentation',app:'PowerPoint'},
+  doc:{title:'Show a Word file or PDF',what:'document',app:'Word'}
 };
 /* An uploaded PDF and its marks live in memory (PDFMEM, by widget id) until Keep saves them.
    Unkept PDFs and unsaved marks last until the page reloads. */
@@ -1284,20 +1280,21 @@ function buildLinkDoc(kind,w,body,tools){
     fld.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go();}if(e.key==='Escape'&&src){e.stopPropagation();editing=false;draw();}});
     fld.addEventListener('paste',()=>setTimeout(()=>{if(officeURL(fld.value).src)go();},0));
     const recent=(w.data.recent||[]).filter(u=>u!==w.data.url||!src);
-    const label=(u,i)=>{const r=officeURL(u);return (r.src&&/google/.test(r.src)?'Google file ':'File ')+(i+1);};
+    const label=(u,i)=>'File '+(i+1);
     body.replaceChildren(h('div',{class:'dz sl-start'},
       h('b',null,K.title),
       h('ol',{class:'sl-steps'},
-        h('li',null,'Open it in '+K.app+' for the web (OneDrive).'),
-        h('li',null,'Click File, then Share, then Embed, and copy the code.'),
-        h('li',null,'Paste it below. A share link works too.')),
+        h('li',null,'Open the file in OneDrive, so it opens in '+K.app+' for the web.'),
+        h('li',null,'Click Share. Under the link settings, choose ',h('b',null,'Anyone'),' and ',h('b',null,'Can view'),', then Apply. Without this, the file usually will not show here.'),
+        h('li',null,'Copy the link, or use File, then Share, then Embed, and copy that code.'),
+        h('li',null,'Paste it below.')),
       fld,
       h('div',{class:'row'},h('button',{class:'btn primary',type:'button',onclick:go},kind==='slides'?'Show slides':'Show document'),
         kind==='doc'?h('button',{class:'btn',type:'button',onclick:()=>up.click()},'Or upload a PDF'):null,
         src||hasPDF()?h('button',{class:'btn',type:'button',onclick:()=>{editing=false;draw();}},'Back to the '+(hasPDF()?'PDF':K.what)):null),
       up,
       err,
-      h('div',{class:'cl-count'},'If it does not appear, set the file to Anyone with the link can view, then try again. '+K.hint),
+      h('div',{class:'cl-count'},'Still blank? Check step 2: the link must be set to Anyone, Can view. If Anyone is not offered, your school has turned it off; ask IT to allow it for this file.'),
       recent.length?h('div',{class:'pk-chips'},h('span',{class:'cl-count'},'Recent:'),
         recent.map((u,i)=>h('button',{class:'chip',type:'button',title:u,onclick:()=>use(u)},label(u,i)))):null));
     if(editing) setTimeout(()=>fld.focus(),0);
@@ -2251,7 +2248,7 @@ async function downloadBackup(note){
   const a=h('a',{href:url,download:'Classboard backup '+day+'.json'});
   document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  toast(note?'Saved a backup of your current boards first, just in case.':'Backup downloaded. Keep it somewhere safe, like Google Drive.');
+  toast(note?'Saved a backup of your current boards first, just in case.':'Backup downloaded. Keep it somewhere safe, like OneDrive.');
 }
 function readBackup(f){
   return f.text().then(txt=>{
@@ -2420,7 +2417,9 @@ function newScreenPop(anchor){
       h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen();}},'Default layout',h('small',null,'Agenda, text box, clock, and timer')),
       h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen('blank');}},'Blank',h('small',null,'An empty screen')),
       h('h3',null,'Your templates'),
-      ...S.templates.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.widgets.length+(t.widgets.length===1?' widget':' widgets')))));
+      ...(S.templates.length?S.templates.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.widgets.length+(t.widgets.length===1?' widget':' widgets')))):
+        [h('p',null,'None yet. Set up a screen the way you like it, then save it here.')]),
+      h('button',{class:'btn',type:'button',onclick:()=>saveTemplatePop(anchor,cur())},'Save this screen as a template'));
   });
 }
 function saveTemplatePop(anchor,sc){
@@ -2547,12 +2546,33 @@ function setPen(on){
 /* ---------- Screens ---------- */
 const tabsEl=$('#tabs');
 function renderTabs(){
-  tabsEl.replaceChildren(...S.screens.map(sc=>
-    h('button',{class:'tab'+(sc.id===S.active?' on':''),type:'button','aria-pressed':String(sc.id===S.active),onclick:()=>switchTo(sc.id)},sc.name||'Untitled')),
-    h('button',{class:'tab add',type:'button',title:'New screen','aria-label':'New screen',onclick:e=>{
-      /* With no templates saved, + makes a default screen right away. Otherwise it asks which to start from. */
-      if(!S.templates.length)newScreen();else newScreenPop(e.currentTarget);
-    }},'+'));
+  /* Each tab: click to switch, double-click the name to rename, x (then Delete?) to remove. */
+  tabsEl.replaceChildren(...S.screens.map(sc=>{
+    const on=sc.id===S.active;
+    const name=h('button',{class:'tab-name',type:'button','aria-pressed':String(on),title:'Double-click to rename',onclick:()=>{if(!on)switchTo(sc.id);}},sc.name||'Untitled');
+    const tab=h('div',{class:'tab'+(on?' on':'')},name);
+    name.addEventListener('dblclick',()=>{
+      const ed=h('input',{class:'tab-edit',value:sc.name||'','aria-label':'Screen name',size:Math.max(6,(sc.name||'').length+1)});
+      let done=false;
+      const finish=keep=>{if(done)return;done=true;if(keep){sc.name=ed.value.trim()||sc.name||'Untitled';save();}renderTabs();};
+      ed.addEventListener('keydown',e=>{if(e.key==='Enter')finish(true);if(e.key==='Escape'){e.stopPropagation();finish(false);}});
+      ed.addEventListener('blur',()=>finish(true));
+      ed.addEventListener('input',()=>{ed.size=Math.max(6,ed.value.length+1);});
+      name.replaceWith(ed);ed.focus();ed.select();
+    });
+    if(S.screens.length>1){
+      const x=h('button',{class:'tab-x',type:'button',title:'Delete this screen','aria-label':'Delete '+(sc.name||'screen')},'');
+      armed(x,'',()=>{
+        const i=S.screens.indexOf(sc);S.screens.splice(i,1);
+        if(S.active===sc.id)S.active=S.screens[Math.max(0,i-1)].id;
+        save();clearPen();renderTabs();renderBoard();
+        toast('Deleted '+(sc.name||'the screen')+'. Undo brings it back.');
+      },'Delete?');
+      tab.append(x);
+    }
+    return tab;
+  }),
+    h('button',{class:'tab add',type:'button',title:'New screen','aria-label':'New screen',onclick:e=>newScreenPop(e.currentTarget)},'+'));
   const on=$('.tab.on',tabsEl);if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
   syncPbar();
 }

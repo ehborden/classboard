@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, stored, settle, board, widget } = require('./helpers');
+const { openApp, stored, settle, board, widget, addScreen } = require('./helpers');
 
 const agendaBoard = () => board([widget('agenda', { title: 'Today', items: ['Warm up', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket'].map((t, i) => ({ id: 'a' + i, txt: t, done: false })) })]);
 const rowsState = page => page.$$eval('.ag-row', rs => rs.map(r => (r.classList.contains('now') ? '>' : '') + r.querySelector('.ag-txt').value));
@@ -75,7 +75,7 @@ test('minimize keeps a widget on the board and survives a reload', async ({ page
 
 test('new screens use the default layout, and the board name can be edited', async ({ page }) => {
   await openApp(page);
-  await page.click('.tab.add');
+  await addScreen(page);
   await expect(page.locator('.widget .wlabel')).toHaveText(['Agenda', 'Text box', 'Clock', 'Timer']);
   await page.fill('#brand', 'Room 204'); await page.press('#brand', 'Enter'); await settle(page);
   await page.reload();
@@ -96,7 +96,7 @@ test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice', 'Points', 'Document camera']);
 });
 
-test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
+test('slides: PowerPoint and SharePoint links become embeddable addresses', async ({ page }) => {
   await openApp(page);
   const r = await page.evaluate(() => {
     const f = window.classboardTest.slidesURL;
@@ -105,8 +105,6 @@ test('slides: PowerPoint, SharePoint, and Google links become embeddable address
       f('https://onedrive.live.com/redir?resid=ABC%21123&authkey=!xyz'),
       f('https://yorkprep-my.sharepoint.com/:p:/g/personal/teacher/EXabc?e=k1'),
       f('https://yorkprep.sharepoint.com/_layouts/15/Doc.aspx?sourcedoc={1}&action=edit'),
-      f('https://docs.google.com/presentation/d/1AbC_d-9/edit#slide=id.p'),
-      f('https://docs.google.com/presentation/d/e/2PACX-1vT/pub?start=false'),
       f('https://1drv.ms/p/s!abc'),
       f('https://example.com/deck.pptx'),
     ].map(x => x.src || 'ERROR: ' + x.error);
@@ -115,10 +113,8 @@ test('slides: PowerPoint, SharePoint, and Google links become embeddable address
   expect(r[1]).toBe('https://onedrive.live.com/embed?resid=ABC%21123&authkey=!xyz&em=2');
   expect(r[2]).toBe('https://yorkprep-my.sharepoint.com/:p:/g/personal/teacher/EXabc?e=k1&action=embedview');
   expect(r[3]).toBe('https://yorkprep.sharepoint.com/_layouts/15/Doc.aspx?sourcedoc={1}&action=embedview');
-  expect(r[4]).toBe('https://docs.google.com/presentation/d/1AbC_d-9/embed?start=false&loop=false');
-  expect(r[5]).toBe('https://docs.google.com/presentation/d/e/2PACX-1vT/embed?start=false&loop=false');
-  expect(r[6]).toMatch(/^ERROR: Short 1drv\.ms links/);
-  expect(r[7]).toMatch(/^ERROR: That link is not from OneDrive/);
+  expect(r[4]).toMatch(/^ERROR: Short 1drv\.ms links/);
+  expect(r[5]).toMatch(/^ERROR: That link is not from OneDrive/);
 });
 
 test('slides: pasting a link shows the deck, and Change keeps a way back', async ({ page }) => {
@@ -135,7 +131,7 @@ test('slides: pasting a link shows the deck, and Change keeps a way back', async
   await expect(page.locator('.slides iframe')).toHaveCount(1);
 });
 
-test('document: Word, Google Docs, Sheets, and Drive PDFs become embeddable addresses', async ({ page }) => {
+test('document: Word and PDF links from SharePoint work, and Google links are turned away', async ({ page }) => {
   await openApp(page);
   const r = await page.evaluate(() => {
     const f = window.classboardTest.officeURL;
@@ -143,19 +139,11 @@ test('document: Word, Google Docs, Sheets, and Drive PDFs become embeddable addr
       f('https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1'),
       f('https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2'),
       f('https://docs.google.com/document/d/1Doc-id/edit'),
-      f('https://docs.google.com/spreadsheets/d/1Sheet/edit#gid=0'),
-      f('https://drive.google.com/file/d/1PdfFile/view?usp=sharing'),
-      f('https://drive.google.com/open?id=1Other'),
     ].map(x => x.src || 'ERROR: ' + x.error);
   });
-  expect(r).toEqual([
-    'https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1&action=embedview',
-    'https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2&action=embedview',
-    'https://docs.google.com/document/d/1Doc-id/preview',
-    'https://docs.google.com/spreadsheets/d/1Sheet/preview',
-    'https://drive.google.com/file/d/1PdfFile/preview',
-    'https://drive.google.com/file/d/1Other/preview',
-  ]);
+  expect(r[0]).toBe('https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1&action=embedview');
+  expect(r[1]).toBe('https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2&action=embedview');
+  expect(r[2]).toMatch(/^ERROR: That link is not from OneDrive or SharePoint/);
 });
 
 test('dice: roll any number of dice, and the total matches', async ({ page }) => {
@@ -204,4 +192,19 @@ test('document camera: starts, freezes, and turns off when minimized', async ({ 
   await expect.poll(playing).toBe(true);
   await page.click('.cam >> text=Turn off');
   await expect(page.locator('.cam >> text=Start camera')).toBeVisible();
+});
+
+test('screen tabs: double-click to rename, x then Delete? to remove, and Undo brings it back', async ({ page }) => {
+  await openApp(page);
+  await addScreen(page); await settle(page);
+  await page.locator('.tab.on .tab-name').dblclick();
+  await page.fill('.tab-edit', 'Lab day'); await page.press('.tab-edit', 'Enter');
+  await expect(page.locator('.tab.on')).toHaveText('Lab day'); await settle(page);
+  await page.click('.tab.on .tab-x');
+  await expect(page.locator('.tab.on .tab-x')).toHaveText('Delete?');
+  await page.click('.tab.on .tab-x');
+  await expect(page.locator('.tab:not(.add)')).toHaveCount(1);
+  await expect(page.locator('.tab-x')).toHaveCount(0);
+  await page.click('#bUndo');
+  await expect(page.locator('.tab:not(.add)')).toHaveText(['Screen 1', 'Lab day']);
 });

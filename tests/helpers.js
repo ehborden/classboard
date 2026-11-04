@@ -73,4 +73,10 @@ function widget(type, data, at) {
   return { id: type + '1', type, x, y, w, h, z: 1, data };
 }
 
-module.exports = { APP, KEY, openApp, settle, stored, board, widget };
+// + opens the New screen menu; pick a starting point (Default layout unless given).
+async function addScreen(page, choice) {
+  await page.click('.tab.add');
+  await page.click('.pop .opt >> text=' + (choice || 'Default layout'));
+}
+
+module.exports = { APP, KEY, openApp, settle, stored, board, widget, addScreen };

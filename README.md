@@ -21,7 +21,7 @@ Everything you make (screens, widgets, class lists, seating charts, settings) is
 
 Gear menu, then **Backup**.
 
-- **Download backup** saves everything to one file, including images. Keep it somewhere safe, like Google Drive.
+- **Download backup** saves everything to one file, including images. Keep it somewhere safe, like OneDrive.
 - **Import backup** replaces everything in this browser with a backup file. It is not a merge. A backup of what is there now downloads first, automatically, so an import can always be reversed.
 - After the first week, if your last backup is more than two weeks old, the app reminds you once per visit.
 
@@ -35,8 +35,8 @@ To move to a new computer: Download backup on the old one, then Import backup on
 
 ## Features
 
-- **Screens and widgets.** Drag a widget by its title bar, resize from its corner, minimize it to just its title bar. New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
-- **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. After that, **+** asks whether to start from the default layout, a blank screen, or a template. Rename or delete templates from the gear menu.
+- **Screens and widgets.** Click a screen's tab to switch to it, double-click the name to rename it, and use its × to delete it (click again to confirm). Drag a widget by its title bar, resize from its corner, minimize it to just its title bar. New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
+- **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. **+** asks whether to start from the default layout, a blank screen, or one of your templates, and can save the current screen as a template. Rename or delete templates from the gear menu.
 - **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Pen, Calm, and Exit.
 - **Pen.** Draw anywhere on the board, over any widget, with a pen, highlighter, or eraser. It is scratch paper: nothing is saved, and marks clear with Clear, a screen switch, or a reload. A stylus draws with pressure.
 - **Agenda.** No times. The first unchecked item is the current one: bold and teal, with everything else in gray. Drag the handle to reorder. In Present mode it shows the current item and the next two.
@@ -46,8 +46,8 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Seating chart.** Step 1, set up the room: start from rows of desks or table groups, then move pieces to match. Step 2, seat students by dragging names or clicking a name and then a chair. Each class keeps its own seats in the same room.
 - **Names and groups.** Pick a name, make partners, or make groups, skipping absent students.
 - **Classes.** Add students one at a time, paste a list, or **Import from a file or photo**: CSV, Excel, PDF, or a picture or screenshot of a roster. Photos and scanned PDFs are read inside your browser, so names never leave the computer. Everything goes to a review box first, where you choose full names, first name and last initial, or first names only.
-- **Slides.** Show a PowerPoint from OneDrive on the board, with PowerPoint's own next and back controls. In PowerPoint for the web, use File, then Share, then Embed, and paste the code; a share link works too. The file usually needs to be shared as "Anyone with the link can view." Google Slides links also work. A .pptx file cannot be opened directly in a browser.
-- **Document.** Show a Word file or PDF from OneDrive the same way, or a Google Doc, Sheet, or Drive file. Or **upload a PDF** to mark it up: each page keeps its own marks, and nothing is saved until you click **Keep PDF and marks**. To use a Word file this way, save it as a PDF in Word first (File, then Save As, then PDF).
+- **Slides.** Show a PowerPoint from OneDrive on the board, with PowerPoint's own next and back controls. In OneDrive, click **Share**, set the link to **Anyone** and **Can view**, then copy the link (or use File, then Share, then Embed, and copy that code) and paste it into the widget. Without the Anyone setting, the file usually will not show. If Anyone is not offered, the school has turned it off, and IT has to allow it. A .pptx file cannot be opened directly in a browser.
+- **Document.** Show a Word file or PDF from OneDrive the same way, with the same Anyone, Can view setting. Or **upload a PDF** to mark it up: each page keeps its own marks, and nothing is saved until you click **Keep PDF and marks**. To use a Word file this way, save it as a PDF in Word first (File, then Save As, then PDF).
 - **Document camera.** Live video from a USB document camera, this computer's camera, or an iPhone through Continuity Camera, with Freeze, Mirror, and Upside down. Nothing is recorded, and the camera turns off when the widget is minimized or on another screen. Works best from the live site.
 - **Points.** By default the whole class works toward a goal and a reward, with a progress bar. Switch to Teams for named team scores.
 - **Dice.** Roll 1 to 6 dice with 4 to 20 sides, with a total.
