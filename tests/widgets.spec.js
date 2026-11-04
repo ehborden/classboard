@@ -93,7 +93,7 @@ test('calm mode keeps a clock on screen and turns music off', async ({ page }) =
 test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await openApp(page);
   await page.click('#bAdd');
-  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice']);
+  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice', 'Points']);
 });
 
 test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
@@ -170,4 +170,19 @@ test('dice: roll any number of dice, and the total matches', async ({ page }) =>
   await page.selectOption('.dice select[aria-label=Sides]', '6');
   await page.click('.dice >> text=Roll');
   await expect(page.locator('.die.pips')).toHaveCount(3);
+});
+
+test('points: the class works toward a goal by default, and teams are optional', async ({ page }) => {
+  await openApp(page, board([widget('points', { mode: 'class', goal: 3, reward: 'free time', pts: 0, teams: [] })]));
+  for (let i = 0; i < 3; i++) await page.click('[aria-label="Give the class a point"]');
+  await expect(page.locator('.pt-msg')).toHaveText('Goal reached: free time');
+  await page.click('[aria-label="Take a point away"]');
+  await expect(page.locator('.pt-msg')).toHaveText('Working toward: free time');
+  await page.click('.points >> text=Teams');
+  await page.click('.points >> text=+ Team');
+  await expect(page.locator('.pt-card')).toHaveCount(2);
+  await page.click('[aria-label="Give a point to Team 2"]');
+  const d = (await stored(page)).screens[0].widgets[0].data;
+  expect(d.pts).toBe(2);
+  expect(d.teams.map(t => t.pts)).toEqual([0, 1]);
 });

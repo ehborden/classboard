@@ -147,6 +147,31 @@ button,input,select,textarea{font:inherit;color:inherit}
 .imgwrap{flex:1;min-height:0;display:flex}
 .music .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .music .pk-chips{justify-content:center;align-items:center}
+.points{gap:8px}
+.pt-mode{align-self:center}
+.pt-class{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+.pt-big{font-family:var(--font-display);font-weight:700;line-height:1}
+.pt-big .pt-num{font-size:min(22cqw,26cqh);font-variant-numeric:tabular-nums}
+.pt-of{font-size:min(7cqw,9cqh);color:var(--muted)}
+.pt-bar{width:90%;height:14px;border-radius:99px;background:var(--accent-soft);overflow:hidden;border:1px solid var(--line)}
+.pt-bar i{display:block;height:100%;background:var(--accent)}
+.pt-msg{font-size:max(var(--min-text,0px),clamp(14px,4.2cqw,24px));color:var(--muted)}
+.pt-msg b{color:var(--ink)}
+.pt-class.done .pt-msg{color:var(--accent);font-weight:700}
+.pt-class.done .pt-msg b{color:var(--accent)}
+.pt-btns{display:flex;gap:6px;justify-content:center}
+.pt-set{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;font-size:13px}
+.pt-goal{width:5em;padding:4px 6px}
+.pt-reward{width:14em;padding:4px 8px}
+.pt-teams{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(9em,1fr));gap:8px;align-content:start}
+.pt-card{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pt-head{display:flex;align-items:center;width:100%}
+.pt-name{flex:1;min-width:0;border:0;background:transparent;text-align:center;font-weight:600;font-size:inherit;border-radius:6px;padding:2px 4px}
+.pt-name:focus{background:var(--panel)}
+.pt-card .pt-num{font:700 min(12cqw,15cqh) var(--font-display);font-variant-numeric:tabular-nums;line-height:1}
+.pt-add{align-self:center;justify-self:start}
+.present .pt-mode,.present .pt-set,.present .pt-rm,.present .pt-add{display:none}
+.present .pt-name,.present .pt-reward{pointer-events:none}
 .dice{align-items:center;justify-content:center;gap:10px}
 .dice-tray{display:flex;flex-wrap:wrap;gap:min(3cqw,14px);justify-content:center;align-items:center;flex:1;min-height:0;align-content:center}
 .die{--d:min(22cqw,30cqh,120px);width:var(--d);aspect-ratio:1;border:3px solid var(--ink);border-radius:18%;background:var(--panel);flex:none}
@@ -421,6 +446,8 @@ const TYPES={
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
   slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive, or Google Slides',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
+  points:{label:'Points',desc:'The class works toward a goal, or keep team scores',w:.36,h:.46,
+    data:()=>({mode:'class',goal:20,reward:'5 free minutes',pts:0,teams:[{id:uid(),name:'Team 1',pts:0},{id:uid(),name:'Team 2',pts:0}]}),build:(w,b,t)=>buildPoints(w,b,t)},
   dice:{label:'Dice',desc:'Roll 1 to 6 dice with 4 to 20 sides',w:.30,h:.38,data:()=>({n:2,sides:6,vals:[]}),build:(w,b,t)=>buildDice(w,b,t)},
   doc:{label:'Document',desc:'Show a Word file or PDF from OneDrive, or a Google Doc',w:.55,h:.85,data:()=>({url:''}),build:(w,b,t)=>buildDoc(w,b,t)}
 };
@@ -866,6 +893,53 @@ function buildMusic(w,body,tools){
       recent.length?h('div',{class:'pk-chips'},h('span',{class:'cl-count'},'Recent:'),
         recent.map(u=>h('button',{class:'chip',type:'button',title:u,onclick:()=>use(u)},label(u)))):null));
     if(editing) setTimeout(()=>fld.focus(),0);
+  }
+  draw();
+}
+
+/* ---------- Points ---------- */
+/* One class working toward a shared goal by default, or team scores. Reaching the goal shows a calm,
+   static message: no confetti, no flashing. */
+function buildPoints(w,body,tools){
+  const D=w.data;
+  if(!Array.isArray(D.teams)||!D.teams.length)D.teams=[{id:uid(),name:'Team 1',pts:0},{id:uid(),name:'Team 2',pts:0}];
+  const resetB=tbtn('Reset','Set all points back to 0',null);
+  armed(resetB,'Reset',()=>{D.pts=0;D.teams.forEach(t=>{t.pts=0;});save();draw();},'Reset?');
+  tools.append(resetB);
+  const add=(d,t)=>{if(t)t.pts=Math.max(0,t.pts+d);else D.pts=Math.max(0,D.pts+d);save();draw();};
+  function draw(){
+    const seg=h('div',{class:'seg pt-mode',role:'group','aria-label':'Points mode'},
+      [['class','One class'],['teams','Teams']].map(([k,l])=>h('button',{type:'button',class:D.mode===k?'on':'','aria-pressed':String(D.mode===k),onclick:()=>{D.mode=k;save();draw();}},l)));
+    let main;
+    if(D.mode==='teams'){
+      main=h('div',{class:'pt-teams'},D.teams.map(t=>{
+        const nm=h('input',{class:'pt-name',value:t.name,'aria-label':'Team name'});
+        nm.addEventListener('input',()=>{t.name=nm.value;save();});
+        const rm=h('button',{class:'ag-rm pt-rm',type:'button',title:'Remove team','aria-label':'Remove '+t.name},'×');
+        rm.addEventListener('click',()=>{D.teams=D.teams.filter(x=>x!==t);if(!D.teams.length)D.teams.push({id:uid(),name:'Team 1',pts:0});save();draw();});
+        return h('div',{class:'pt-card'},h('div',{class:'pt-head'},nm,D.teams.length>1?rm:null),
+          h('div',{class:'pt-num'},String(t.pts)),
+          h('div',{class:'pt-btns'},
+            h('button',{class:'btn',type:'button','aria-label':'Take a point from '+t.name,onclick:()=>add(-1,t)},'−'),
+            h('button',{class:'btn primary',type:'button','aria-label':'Give a point to '+t.name,onclick:()=>add(1,t)},'+1')));
+      }),D.teams.length<6?h('button',{class:'btn pt-add',type:'button',onclick:()=>{D.teams.push({id:uid(),name:'Team '+(D.teams.length+1),pts:0});save();draw();}},'+ Team'):null);
+    }else{
+      const goal=Math.max(1,D.goal||1),done=D.pts>=goal;
+      const goalIn=h('input',{class:'fld pt-goal',type:'number',min:'1',max:'999',value:String(goal),'aria-label':'Goal'});
+      goalIn.addEventListener('change',()=>{D.goal=clamp(Math.round(+goalIn.value)||1,1,999);save();draw();});
+      const rew=h('input',{class:'fld pt-reward',value:D.reward||'',placeholder:'Reward, like 5 free minutes','aria-label':'Reward'});
+      rew.addEventListener('input',()=>{D.reward=rew.value;save();const r=$('.pt-msg b',body);if(r)r.textContent=rew.value;});
+      const fill=h('i');fill.style.width=clamp(D.pts/goal,0,1)*100+'%';
+      main=h('div',{class:'pt-class'+(done?' done':'')},
+        h('div',{class:'pt-big'},h('span',{class:'pt-num'},String(D.pts)),h('span',{class:'pt-of'},' of '+goal)),
+        h('div',{class:'pt-bar',role:'progressbar','aria-valuemin':'0','aria-valuemax':String(goal),'aria-valuenow':String(D.pts)},fill),
+        h('div',{class:'pt-msg'},done?h('span',null,'Goal reached: ',h('b',null,D.reward||'')):h('span',null,'Working toward: ',h('b',null,D.reward||''))),
+        h('div',{class:'pt-btns'},
+          h('button',{class:'btn',type:'button','aria-label':'Take a point away',onclick:()=>add(-1)},'−'),
+          h('button',{class:'btn primary big',type:'button','aria-label':'Give the class a point',onclick:()=>add(1)},'+1')),
+        h('div',{class:'pt-set'},h('label',null,'Goal ',goalIn),rew));
+    }
+    body.replaceChildren(seg,main);
   }
   draw();
 }
@@ -1727,6 +1801,7 @@ const ICONS={
   agenda:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17.5h6"/>',
   music:'<path d="M9 18V5.5l11-2.5v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   slides:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 8l4 2-4 2z"/>',
+  points:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
   dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3"/><circle cx="15.5" cy="15.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'
 };
@@ -1736,7 +1811,7 @@ function icon(k){
   return i;
 }
 /* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
-const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice'];
+const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice','points'];
 function addPop(anchor){
   openPop(anchor,box=>{
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
