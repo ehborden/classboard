@@ -93,7 +93,7 @@ test('calm mode keeps a clock on screen and turns music off', async ({ page }) =
 test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await openApp(page);
   await page.click('#bAdd');
-  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice', 'Points']);
+  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice', 'Points', 'Document camera']);
 });
 
 test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
@@ -186,4 +186,22 @@ test('points: the class works toward a goal by default, and teams are optional',
   const d = (await stored(page)).screens[0].widgets[0].data;
   expect(d.pts).toBe(2);
   expect(d.teams.map(t => t.pts)).toEqual([0, 1, 0]);
+});
+
+test('document camera: starts, freezes, and turns off when minimized', async ({ page }) => {
+  await page.context().grantPermissions(['camera']);
+  await openApp(page, board([widget('cam', { on: false, deviceId: '', mirror: false, flip: false })]));
+  await page.click('.cam >> text=Start camera');
+  const playing = () => page.evaluate(() => { const v = document.querySelector('.cam-video'); return !!(v.srcObject && v.srcObject.getVideoTracks()[0].readyState === 'live'); });
+  await expect.poll(playing).toBe(true);
+  await page.click('.cam >> text=Freeze');
+  await expect(page.locator('.cam-still')).toBeVisible();
+  await page.click('.cam >> text=Mirror');
+  await expect(page.locator('.cam-video')).toHaveCSS('transform', /matrix\(-1/);
+  await page.click('[title="Minimize this widget"]');
+  await expect.poll(playing).toBe(false);
+  await page.click('[title="Restore this widget"]');
+  await expect.poll(playing).toBe(true);
+  await page.click('.cam >> text=Turn off');
+  await expect(page.locator('.cam >> text=Start camera')).toBeVisible();
 });

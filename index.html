@@ -147,6 +147,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 .imgwrap{flex:1;min-height:0;display:flex}
 .music .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .music .pk-chips{justify-content:center;align-items:center}
+.cam-stage{position:relative;flex:1;min-height:0;background:#000}
+.cam-stage[hidden]{display:none}
+.cam-video,.cam-still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.cam-still[hidden]{display:none}
+.cam-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:6px;background:var(--panel2);border-top:1px solid var(--line)}
+.cam-bar[hidden]{display:none}
+.cam-bar .btn{padding:5px 10px}
+.cam-bar .btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.cam-pick{max-width:14em}
+.cam-msg[hidden]{display:none}
+.present .cam-bar{position:absolute;left:0;right:0;bottom:0;opacity:0;transition:opacity .2s}
+.present .cam:hover .cam-bar{opacity:1}
 .points{gap:8px}
 .pt-mode{align-self:center}
 .pt-class{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
@@ -446,6 +458,7 @@ const TYPES={
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
   slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive, or Google Slides',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
+  cam:{label:'Document camera',desc:'Show a live camera, like a document camera',w:.5,h:.6,data:()=>({on:false,deviceId:'',mirror:false,flip:false}),build:(w,b,t,el)=>buildCam(w,b,t,el)},
   points:{label:'Points',desc:'The class works toward a goal, or keep team scores',w:.36,h:.46,
     data:()=>({mode:'class',goal:20,reward:'5 free minutes',pts:0,teams:[{id:uid(),name:'Team 1',pts:0},{id:uid(),name:'Team 2',pts:0}]}),build:(w,b,t)=>buildPoints(w,b,t)},
   dice:{label:'Dice',desc:'Roll 1 to 6 dice with 4 to 20 sides',w:.30,h:.38,data:()=>({n:2,sides:6,vals:[]}),build:(w,b,t)=>buildDice(w,b,t)},
@@ -549,7 +562,7 @@ function tog(label,title,get,set){
 
 /* ---------- Board ---------- */
 const boardEl=$('#board');
-let ticks=[],classHooks=[];
+let ticks=[],classHooks=[],cleanups=[];
 setInterval(()=>{ticks.forEach(f=>{try{f();}catch(e){}});},500);
 
 function place(el,w){
@@ -564,7 +577,8 @@ function bringFront(w,el){
   if((w.z||0)<mz||ws.filter(x=>x.z===mz).length>1){w.z=mz+1;el.style.zIndex=w.z;}
 }
 function renderBoard(){
-  ticks=[];classHooks=[];
+  cleanups.forEach(f=>{try{f();}catch(e){}});
+  ticks=[];classHooks=[];cleanups=[];
   const sc=cur();
   boardEl.className='board bg-'+sc.bg;
   boardEl.replaceChildren();
@@ -895,6 +909,93 @@ function buildMusic(w,body,tools){
     if(editing) setTimeout(()=>fld.focus(),0);
   }
   draw();
+}
+
+/* ---------- Document camera ---------- */
+/* Live video from any camera Chrome can see: a USB document camera, the built-in camera, or an iPhone
+   through Continuity Camera. Nothing is recorded or sent. The camera turns off whenever the widget is
+   minimized, removed, or on another screen, and turns back on when it is showing again. */
+function buildCam(w,body,tools,el){
+  const D=w.data;
+  body.classList.add('flush');
+  let stream=null,starting=false,frozen=false,err='';
+  const video=h('video',{class:'cam-video',autoplay:true,muted:true,playsinline:true});
+  const still=h('canvas',{class:'cam-still',hidden:true});
+  const pick=h('select',{class:'sel cam-pick','aria-label':'Camera'});
+  pick.addEventListener('change',()=>{D.deviceId=pick.value;save();stop();start();});
+  const freezeB=h('button',{class:'btn',type:'button','aria-pressed':'false'},'Freeze');
+  const mirrorB=h('button',{class:'btn',type:'button'},'Mirror');
+  const flipB=h('button',{class:'btn',type:'button'},'Upside down');
+  const offB=h('button',{class:'btn',type:'button'},'Turn off');
+  const bar=h('div',{class:'cam-bar'},pick,freezeB,mirrorB,flipB,offB);
+  const msg=h('div',{class:'dz cam-msg'});
+  const stage=h('div',{class:'cam-stage'},video,still);
+  body.append(stage,bar,msg);
+  function look(){
+    const t=(D.mirror?'scaleX(-1) ':'')+(D.flip?'rotate(180deg)':'');
+    video.style.transform=still.style.transform=t;
+    mirrorB.setAttribute('aria-pressed',String(!!D.mirror));mirrorB.classList.toggle('on',!!D.mirror);
+    flipB.setAttribute('aria-pressed',String(!!D.flip));flipB.classList.toggle('on',!!D.flip);
+    freezeB.textContent=frozen?'Unfreeze':'Freeze';freezeB.classList.toggle('on',frozen);freezeB.setAttribute('aria-pressed',String(frozen));
+  }
+  mirrorB.addEventListener('click',()=>{D.mirror=!D.mirror;save();look();});
+  flipB.addEventListener('click',()=>{D.flip=!D.flip;save();look();});
+  freezeB.addEventListener('click',()=>{
+    frozen=!frozen;
+    if(frozen&&video.videoWidth){still.width=video.videoWidth;still.height=video.videoHeight;still.getContext('2d').drawImage(video,0,0);}
+    still.hidden=!frozen;look();
+  });
+  offB.addEventListener('click',()=>{D.on=false;save();stop();show();});
+  function show(){
+    const live=!!stream;
+    stage.hidden=bar.hidden=!live;msg.hidden=live;
+    if(!live){
+      msg.replaceChildren(h('b',null,'Document camera'),
+        h('div',null,'Show a page, a book, or student work live on the board. Nothing is recorded.'),
+        h('button',{class:'btn primary big',type:'button',onclick:()=>{D.on=true;save();start();}},starting?'Starting...':'Start camera'),
+        err?h('div',{class:'sl-err cl-count'},err):null,
+        h('div',{class:'cl-count'},'Works with a USB document camera, this computer\'s camera, or an iPhone with Continuity Camera.'));
+    }
+    look();
+  }
+  async function fillPicker(){
+    try{
+      const cams=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+      pick.replaceChildren(...cams.map((c,i)=>h('option',{value:c.deviceId},c.label||'Camera '+(i+1))));
+      const cur=stream&&stream.getVideoTracks()[0].getSettings().deviceId;
+      if(cur)pick.value=cur;
+      pick.hidden=cams.length<2;
+    }catch(e){pick.hidden=true;}
+  }
+  async function start(){
+    if(stream||starting)return;
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){err='This browser cannot use a camera here. Open Classboard from its web address in Chrome or Edge.';show();return;}
+    starting=true;err='';show();
+    try{
+      const v={width:{ideal:1920},height:{ideal:1080}};
+      if(D.deviceId)v.deviceId={exact:D.deviceId};
+      try{stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});}
+      catch(e){if(D.deviceId&&e.name==='OverconstrainedError'){delete v.deviceId;stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});}else throw e;}
+      if(!el.isConnected||el.classList.contains('min')){stop();starting=false;return;}
+      video.srcObject=stream;frozen=false;still.hidden=true;
+      await fillPicker();
+    }catch(e){
+      stream=null;
+      err=e&&e.name==='NotAllowedError'?'The camera is blocked. Click the camera icon in Chrome\'s address bar, choose Allow, then try again.':
+        e&&e.name==='NotFoundError'?'No camera was found. Plug one in, then try again.':'The camera could not start. It may be in use by another app, like Zoom.';
+    }
+    starting=false;show();
+  }
+  function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;}
+  /* Keep the camera on only while it is showing. */
+  ticks.push(()=>{
+    const showing=el.isConnected&&!el.classList.contains('min');
+    if(!showing&&stream){stop();show();}
+    else if(showing&&D.on&&!stream&&!starting&&!err)start();
+  });
+  cleanups.push(stop);
+  show();
+  if(D.on)start();
 }
 
 /* ---------- Points ---------- */
@@ -1801,6 +1902,7 @@ const ICONS={
   agenda:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17.5h6"/>',
   music:'<path d="M9 18V5.5l11-2.5v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   slides:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 8l4 2-4 2z"/>',
+  cam:'<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',
   points:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
   dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3"/><circle cx="15.5" cy="15.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'
@@ -1811,7 +1913,7 @@ function icon(k){
   return i;
 }
 /* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
-const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice','points'];
+const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice','points','cam'];
 function addPop(anchor){
   openPop(anchor,box=>{
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
