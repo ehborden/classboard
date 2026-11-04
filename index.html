@@ -500,6 +500,14 @@ function normalize(D){
   /* Saved fields win; any field a widget is missing (from an older version) gets its default. */
   const fill=w=>{w.data=Object.assign(TYPES[w.type].data(),w.data&&typeof w.data==='object'?w.data:{});};
   D.screens.forEach(s=>s.widgets.forEach(fill));
+  /* The starter board used to say "Do now". Rename it to "Warm up" only where the starter content is
+     still unchanged: an agenda with exactly the four starter rows, or a text box that opens with the
+     starter heading. Anything a teacher wrote is left alone. */
+  D.screens.forEach(s=>s.widgets.forEach(w=>{
+    const d=w.data;
+    if(w.type==='agenda'&&Array.isArray(d.items)&&d.items.map(i=>i.txt).join('|')==='Do now|Mini lesson|Practice|Share out')d.items[0].txt='Warm up';
+    if(w.type==='text'&&typeof d.html==='string'&&d.html.startsWith('<b>Do now</b>'))d.html='<b>Warm up</b>'+d.html.slice(13);
+  }));
   D.templates.forEach(t=>{t.widgets=(t.widgets||[]).filter(w=>TYPES[w.type]);t.widgets.forEach(fill);});
   if(!D.screens.some(s=>s.id===D.active)) D.active=D.screens[0].id;
   return D;

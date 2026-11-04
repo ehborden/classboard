@@ -84,3 +84,14 @@ test('confirm buttons are not red', async ({ page }) => {
   const [r, g, b] = bg.match(/\d+/g).map(Number);
   expect(r > 150 && g < 90 && b < 90).toBe(false);
 });
+
+test('an old starter board says Warm up, but a teacher\'s own Do now is left alone', async ({ page }) => {
+  await openApp(page, board([
+    widget('agenda', { title: 'Today', items: ['Do now', 'Mini lesson', 'Practice', 'Share out'].map((t, i) => ({ id: 'a' + i, txt: t, done: false })) }),
+    widget('text', { fs: 32, html: '<b>Do now</b><br>Solve the first problem on your own.' }, [0.5, 0.03, 0.4, 0.3]),
+    widget('agenda', { title: 'Mine', items: [{ id: 'x', txt: 'Do now', done: false }, { id: 'y', txt: 'Lab', done: false }] }, [0.5, 0.5, 0.4, 0.4]),
+  ]));
+  await expect(page.locator('.ag-txt').first()).toHaveValue('Warm up');
+  await expect(page.locator('.text .ed b')).toHaveText('Warm up');
+  await expect(page.locator('.ag-txt').nth(4)).toHaveValue('Do now');
+});
