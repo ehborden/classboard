@@ -310,6 +310,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pbar:hover,.pbar:focus-within,.pbar.wake{opacity:1}
 .calm *,.calm *::before,.calm *::after{transition:none!important;animation:none!important}
 .calm-clock{position:absolute;right:2%;bottom:3%;z-index:50;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:.25em .6em;font:700 max(4vh,28px)/1 var(--font-display);box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
+.pen-layer{position:fixed;z-index:800;pointer-events:none;touch-action:none}
+.pen-layer[hidden]{display:none}
+.pen-layer.drawing{pointer-events:auto;cursor:crosshair}
+.pen-bar{position:fixed;z-index:850;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--bar);border:1px solid var(--line);border-radius:14px;padding:6px 8px;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+.pen-bar[hidden]{display:none}
+.present .pen-bar{top:14px}
+.pen-bar .chip{font-size:13px;padding:5px 11px}
+.pen-bar .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.pen-sw{width:26px;height:26px}
+.pen-sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
+.pen-done{padding:5px 14px}
 .pbar span{padding:0 8px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .present .pbar{display:flex}
 /* Back-row sizing for a room up to 20 feet deep, on a 1080-pixel-tall projected image:
@@ -381,6 +392,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <div class="acts">
     <button class="btn" id="bUndo" type="button" title="Undo the last change (Cmd+Z)" disabled>Undo</button>
     <button class="btn" id="bAdd" type="button">Add widget</button>
+    <button class="btn" id="bPen" type="button" title="Draw on the board. Marks are not saved." aria-pressed="false">Pen</button>
     <button class="btn" id="bFloat" type="button" title="Open a small clock and timer that stays on top of other windows, like PowerPoint">Float clock</button>
     <button class="btn primary" id="bPresent" type="button">Present</button>
     <button class="btn icon" id="bGear" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -391,6 +403,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <button class="btn" id="pPrev" type="button" aria-label="Previous screen">Prev</button>
   <span id="pName"></span>
   <button class="btn" id="pNext" type="button" aria-label="Next screen">Next</button>
+  <button class="btn" id="pPen" type="button" title="Draw on the board. Marks are not saved." aria-pressed="false">Pen</button>
   <button class="btn" id="pCalm" type="button" title="Calm mode: no sound, motion, or music" aria-pressed="false">Calm</button>
   <button class="btn" id="pExit" type="button">Exit</button>
 </div>
@@ -2224,6 +2237,86 @@ function templatesPop(anchor){
   });
 }
 
+/* ---------- Board pen ---------- */
+/* Scratch drawing over the whole board. Nothing is saved: marks clear with Clear, a screen switch,
+   or a reload. Points are stored as fractions of the board so marks stay in place when it resizes.
+   A stylus that reports pressure draws thinner and thicker lines. No red, per the design rules. */
+const PEN_COLORS=[['ink','var(--ink)'],['teal','var(--accent)'],['blue','#1f5fbf']];
+const pen={on:false,tool:'pen',color:'ink',size:'thin',strokes:[],canvas:null,bar:null};
+function penColor(k){
+  if(k==='hl')return '#f2c200';
+  const v=(PEN_COLORS.find(c=>c[0]===k)||PEN_COLORS[0])[1];
+  return v.startsWith('var(')?getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim():v;
+}
+function penSetup(){
+  if(pen.canvas&&pen.canvas.isConnected)return;
+  const c=h('canvas',{class:'pen-layer','aria-hidden':'true'});
+  document.body.append(c);pen.canvas=c;
+  let cur=null;
+  const pos=e=>{const r=boardEl.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,e.pressure||.5];};
+  c.addEventListener('pointerdown',e=>{
+    if(!pen.on||e.button>0)return;
+    e.preventDefault();c.setPointerCapture(e.pointerId);
+    cur={tool:pen.tool,color:pen.tool==='hl'?'hl':pen.color,size:pen.size,stylus:e.pointerType==='pen',pts:[pos(e)]};
+    pen.strokes.push(cur);penDraw();
+  });
+  c.addEventListener('pointermove',e=>{if(!cur)return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>cur.pts.push(pos(ev)));penDraw();});
+  const end=()=>{cur=null;};
+  c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+  new ResizeObserver(penDraw).observe(boardEl);
+  window.addEventListener('resize',penDraw);
+}
+function penDraw(){
+  const c=pen.canvas;if(!c)return;
+  const r=boardEl.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  Object.assign(c.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
+  if(c.width!==Math.round(r.width*dpr)||c.height!==Math.round(r.height*dpr)){c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);}
+  const g=c.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,r.width,r.height);
+  g.lineCap='round';g.lineJoin='round';
+  const base=Math.max(2,r.width/400);
+  pen.strokes.forEach(st=>{
+    const wdt=base*(st.size==='thick'?3:1)*(st.tool==='hl'?6:st.tool==='eraser'?8:1);
+    g.globalCompositeOperation=st.tool==='eraser'?'destination-out':'source-over';
+    g.globalAlpha=st.tool==='hl'?.35:1;
+    g.strokeStyle=penColor(st.color);g.fillStyle=g.strokeStyle;
+    const P=st.pts.map(p=>[p[0]*r.width,p[1]*r.height,p[2]]);
+    if(P.length===1){g.beginPath();g.arc(P[0][0],P[0][1],wdt/2,0,Math.PI*2);g.fill();return;}
+    if(st.stylus&&st.tool==='pen'){
+      for(let i=1;i<P.length;i++){g.lineWidth=wdt*(.4+P[i][2]*1.2);g.beginPath();g.moveTo(P[i-1][0],P[i-1][1]);g.lineTo(P[i][0],P[i][1]);g.stroke();}
+    }else{
+      g.lineWidth=wdt;g.beginPath();g.moveTo(P[0][0],P[0][1]);
+      for(let i=1;i<P.length;i++)g.lineTo(P[i][0],P[i][1]);
+      g.stroke();
+    }
+  });
+  g.globalAlpha=1;g.globalCompositeOperation='source-over';
+  c.classList.toggle('drawing',pen.on);
+  c.hidden=!pen.on&&!pen.strokes.length;
+}
+function clearPen(){pen.strokes=[];penDraw();}
+function penBar(){
+  const tool=(k,l)=>h('button',{class:'chip'+(pen.tool===k?' on':''),type:'button','aria-pressed':String(pen.tool===k),onclick:()=>{pen.tool=k;penBar();}},l);
+  const bar=pen.bar||(pen.bar=h('div',{class:'pen-bar',role:'toolbar','aria-label':'Pen'}));
+  bar.replaceChildren(
+    tool('pen','Pen'),tool('hl','Highlighter'),tool('eraser','Eraser'),
+    h('span',{class:'pen-sep'}),
+    ...PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(pen.color===k?' on':''),type:'button',title:k[0].toUpperCase()+k.slice(1),'aria-label':k+' ink','aria-pressed':String(pen.color===k),onclick:()=>{pen.color=k;if(pen.tool!=='pen')pen.tool='pen';penBar();}});b.style.background=penColor(k);return b;}),
+    h('span',{class:'pen-sep'}),
+    h('button',{class:'chip'+(pen.size==='thick'?' on':''),type:'button','aria-pressed':String(pen.size==='thick'),onclick:()=>{pen.size=pen.size==='thick'?'thin':'thick';penBar();}},'Thick'),
+    h('span',{class:'pen-sep'}),
+    h('button',{class:'chip',type:'button',onclick:()=>{pen.strokes.pop();penDraw();}},'Undo'),
+    h('button',{class:'chip',type:'button',onclick:clearPen},'Clear'),
+    h('button',{class:'btn primary pen-done',type:'button',onclick:()=>setPen(false)},'Done'));
+  if(!bar.isConnected)document.body.append(bar);
+  bar.hidden=!pen.on;
+}
+function setPen(on){
+  pen.on=on;penSetup();closePop();penBar();penDraw();
+  ['#bPen','#pPen'].forEach(id=>{const b=$(id);b.classList.toggle('primary',on);b.setAttribute('aria-pressed',String(on));});
+  if(on&&!sessionStorage.getItem('penTip')){try{sessionStorage.setItem('penTip','1');}catch(e){}toast('Drawing on the board. Marks are not saved. Press Done or Esc to use the widgets again.');}
+}
+
 /* ---------- Screens ---------- */
 const tabsEl=$('#tabs');
 function renderTabs(){
@@ -2236,7 +2329,7 @@ function renderTabs(){
   const on=$('.tab.on',tabsEl);if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
   syncPbar();
 }
-function switchTo(id){S.active=id;save();renderTabs();renderBoard();}
+function switchTo(id){S.active=id;save();clearPen();renderTabs();renderBoard();}
 function go(d){
   const i=S.screens.findIndex(s=>s.id===S.active);
   switchTo(S.screens[(i+d+S.screens.length)%S.screens.length].id);
@@ -2273,6 +2366,7 @@ document.addEventListener('fullscreenchange',()=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(popEl){closePop();return;}
+    if(pen.on){setPen(false);return;}
     if(presenting)setPresent(false);
     return;
   }
@@ -2298,6 +2392,8 @@ $('#pPrev').addEventListener('click',()=>go(-1));
 $('#pNext').addEventListener('click',()=>go(1));
 $('#pExit').addEventListener('click',()=>setPresent(false));
 $('#pCalm').addEventListener('click',()=>setCalm(!S.calm));
+$('#bPen').addEventListener('click',()=>setPen(!pen.on));
+$('#pPen').addEventListener('click',()=>setPen(!pen.on));
 
 syncBrand();
 /* Remind about backups once per visit, after the first week of use, if the last one is over two weeks old. */
