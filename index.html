@@ -18,7 +18,7 @@
   --bg:#eef1f5; --bar:#ffffff; --ink:#15202b; --muted:#404c5a;
   --panel:#ffffff; --panel2:#f0f3f7; --line:#d2dae4;
   --accent:#085a56; --accent-ink:#ffffff; --accent-soft:#e3f3f1;
-  --sun:#f2b01e; --on-sun:#2b1d00; --danger:#b42318; --on-danger:#ffffff;
+  --sun:#f2b01e; --on-sun:#2b1d00; --danger:#15202b; --on-danger:#ffffff;
   --mist:#dce4ed;
   --shadow:0 1px 2px rgba(15,25,35,.08),0 8px 22px rgba(15,25,35,.10);
 }
@@ -27,7 +27,7 @@
     --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#b9c5d1;
     --panel:#1b2530; --panel2:#243141; --line:#314052;
     --accent:#6fdcd3; --accent-ink:#06211f; --accent-soft:#143836;
-    --sun:#f5be3a; --on-sun:#2b1d00; --danger:#ff8a80; --on-danger:#3a0a06;
+    --sun:#f5be3a; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
     --mist:#0b1117;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
     color-scheme:dark;
@@ -37,7 +37,7 @@
   --bg:#0f151b; --bar:#161e26; --ink:#e8eef4; --muted:#b9c5d1;
   --panel:#1b2530; --panel2:#243141; --line:#314052;
   --accent:#6fdcd3; --accent-ink:#06211f; --accent-soft:#143836;
-  --sun:#f5be3a; --on-sun:#2b1d00; --danger:#ff8a80; --on-danger:#3a0a06;
+  --sun:#f5be3a; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
   --mist:#0b1117;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
   color-scheme:dark;
@@ -71,7 +71,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 .btn.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
-.btn.danger,.tb.danger{background:var(--danger);border-color:var(--danger);color:var(--on-danger)}
+/* Confirm buttons (Sure?, Remove?) switch to solid ink and new wording. No red, per the design rules. */
+.btn.danger,.tb.danger,.tb.danger:hover{background:var(--danger);border-color:var(--danger);color:var(--on-danger);font-weight:700}
 .btn.big{padding:9px 18px;font-size:15px}
 .btn.icon{display:inline-grid;place-items:center;padding:7px 9px}
 .lnk{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer}
@@ -464,8 +465,8 @@ function guideWidgets(html,items){
 }
 function seed(){
   const cls={id:uid(),name:'Sample class',students:['Ada','Ben','Chloe','Dev','Elena','Femi','Grace','Hiro','Isla','Jamal'],absent:[]};
-  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Do now</b><br>Solve the first problem on your own. Then compare with a partner.',[
-    {id:uid(),txt:'Do now',done:false},
+  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Warm up</b><br>Solve the first problem on your own. Then compare with a partner.',[
+    {id:uid(),txt:'Warm up',done:false},
     {id:uid(),txt:'Mini lesson',done:false},
     {id:uid(),txt:'Practice',done:false},
     {id:uid(),txt:'Share out',done:false}])};
@@ -496,6 +497,10 @@ function normalize(D){
   if(!Array.isArray(D.templates)) D.templates=[];
   D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
   D.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);s.bg=s.bg||'mist';});
+  /* Saved fields win; any field a widget is missing (from an older version) gets its default. */
+  const fill=w=>{w.data=Object.assign(TYPES[w.type].data(),w.data&&typeof w.data==='object'?w.data:{});};
+  D.screens.forEach(s=>s.widgets.forEach(fill));
+  D.templates.forEach(t=>{t.widgets=(t.widgets||[]).filter(w=>TYPES[w.type]);t.widgets.forEach(fill);});
   if(!D.screens.some(s=>s.id===D.active)) D.active=D.screens[0].id;
   return D;
 }
@@ -503,16 +508,16 @@ if(!S||!Array.isArray(S.screens)||!S.screens.length) S=seed();
 normalize(S);
 const cur=()=>S.screens.find(s=>s.id===S.active)||S.screens[0];
 
-let saveT=null,warned=false;
+let saveT=null,warned=false,dirty=false;
 function flush(){
-  record();
-  try{localStorage.setItem(KEY,JSON.stringify(S));warned=false;return true;}
+  clearTimeout(saveT);record();
+  try{localStorage.setItem(KEY,JSON.stringify(S));warned=false;dirty=false;return true;}
   catch(e){
     if(!warned){warned=true;toast('This browser is not saving your boards. Storage may be full or blocked. Remove large images to free space.');}
     return false;
   }
 }
-function save(){clearTimeout(saveT);saveT=setTimeout(flush,300);}
+function save(){dirty=true;clearTimeout(saveT);saveT=setTimeout(flush,300);}
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){
     const t=e.target;
@@ -521,7 +526,21 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();undo();
   }
 });
-window.addEventListener('pagehide',()=>{clearTimeout(saveT);flush();});
+/* Saving on the way out only when something changed keeps an older tab from writing its stale copy
+   over a newer one. When another tab saves, this tab takes the newer boards, keeping its own screen. */
+window.addEventListener('pagehide',()=>{if(dirty)flush();});
+window.addEventListener('storage',e=>{
+  if(e.key!==KEY||!e.newValue)return;
+  let D;try{D=JSON.parse(e.newValue);}catch(err){return;}
+  if(!D||!Array.isArray(D.screens)||!D.screens.length)return;
+  clearTimeout(saveT);dirty=false;
+  const mine=S.active;
+  S=normalize(D);
+  if(S.screens.some(sc=>sc.id===mine))S.active=mine;
+  hist.push(snap());if(hist.length>UNDO_MAX+1)hist.shift();syncUndo();
+  document.body.classList.toggle('calm',!!S.calm);
+  syncBrand();renderTabs();renderBoard();
+});
 
 /* act is an optional {label, fn} that adds a button to the toast. */
 function toast(msg,act){
@@ -568,16 +587,28 @@ function snap(){
   });
 }
 function unsnap(str){return JSON.parse(str,(k,v)=>typeof v==='string'&&v.startsWith('\u0001img')?IMG.get(v):v);}
+/* Typing in the same box, with no other change in between, updates one undo step instead of adding
+   a step for every pause, so a few sentences cannot push earlier changes out of the 40-step history. */
+let typedIn=null,lastStepTyping=null;
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t&&t.matches&&t.matches('textarea,[contenteditable="true"],input:not([type]),input[type=text],input[type=number],input[type=search]'))typedIn=t;
+},true);
 function record(){
   const x=snap();
-  if(x!==hist[hist.length-1]){hist.push(x);if(hist.length>UNDO_MAX+1)hist.shift();}
+  if(x!==hist[hist.length-1]){
+    if(typedIn&&typedIn===lastStepTyping&&hist.length>1)hist[hist.length-1]=x;
+    else{hist.push(x);if(hist.length>UNDO_MAX+1)hist.shift();}
+    lastStepTyping=typedIn;
+  }
+  typedIn=null;
   syncUndo();
 }
 function syncUndo(){const b=$('#bUndo');if(b)b.disabled=hist.length<2;}
 function undo(){
   clearTimeout(saveT);flush();
   if(hist.length<2)return;
-  hist.pop();
+  hist.pop();lastStepTyping=null;
   const keep={};NO_UNDO.forEach(k=>{if(k in S)keep[k]=S[k];});
   S=normalize(Object.assign(unsnap(hist[hist.length-1]),keep));
   if(!S.screens.some(sc=>sc.id===S.active))S.active=S.screens[0].id;
@@ -609,7 +640,19 @@ function tog(label,title,get,set){
 /* ---------- Board ---------- */
 const boardEl=$('#board');
 let ticks=[],classHooks=[],cleanups=[];
-setInterval(()=>{ticks.forEach(f=>{try{f();}catch(e){}});},500);
+setInterval(()=>{ticks.forEach(f=>{try{f();}catch(e){}});checkTimers();},500);
+/* Timers keep running while their screen is hidden, so this checks every running timer, not just the
+   ones on screen. The Timer widget's own draw handles a timer that is showing. */
+function checkTimers(){
+  Object.keys(RT).forEach(id=>{
+    const rt=RT[id];
+    if(!rt.running||rt.endAt>Date.now())return;
+    const w=S.screens.flatMap(sc=>sc.widgets).find(x=>x.id===id);
+    rt.running=false;rt.left=0;rt.done=true;
+    if(w&&w.data.bell)beep();
+    const el=boardEl.querySelector('[data-id="'+id+'"]');if(el)el.classList.add('done');
+  });
+}
 
 function place(el,w){
   el.style.left=(w.x*100)+'%';el.style.top=(w.y*100)+'%';
@@ -648,7 +691,12 @@ function renderWidget(w){
   const handle=h('div',{class:'resize',title:'Resize'});
   const el=h('section',{class:'widget',tabindex:'-1','data-id':w.id},head,body,handle);
   place(el,w);
-  T.build(w,body,tools,el);
+  try{T.build(w,body,tools,el);}
+  catch(err){
+    console.error('Widget could not load',w.type,err);
+    tools.replaceChildren();body.className='wbody';
+    body.replaceChildren(h('div',{class:'dz'},'This widget could not load. Remove it with the \u00d7 above, then add it again.'));
+  }
   const rm=tbtn('×','Remove this widget',null);
   armed(rm,'×',()=>{
     const sc=cur();sc.widgets=sc.widgets.filter(x=>x!==w);save();el.remove();
@@ -778,6 +826,7 @@ function buildTimer(w,body,tools,el){
   function draw(){
     let left=rt.running?(rt.endAt-Date.now())/1000:rt.left;
     if(rt.running&&left<=0&&!rt.done) finish();
+    if(rt.done) el.classList.add('done');
     if(rt.done) left=0;
     body.classList.toggle('dialmode',w.data.view!=='bar');
     if(w.data.view!=='bar'){
@@ -805,9 +854,25 @@ function buildTimer(w,body,tools,el){
 }
 
 /* ---------- Text ---------- */
+/* Text box HTML comes from saved boards, backups, and templates, so only simple formatting tags are
+   kept and every attribute is dropped. Scripts, event handlers, and links cannot ride along. */
+const SAFE_TAGS=new Set(['B','STRONG','I','EM','U','BR','DIV','P','SPAN','UL','OL','LI','FONT']);
+function cleanHTML(html){
+  const doc=new DOMParser().parseFromString('<body>'+html,'text/html');
+  const walk=n=>[...n.childNodes].forEach(c=>{
+    if(c.nodeType===3)return;
+    if(c.nodeType!==1){c.remove();return;}
+    if(/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|SVG|MATH|LINK|META)$/.test(c.tagName)){c.remove();return;}
+    walk(c);
+    if(!SAFE_TAGS.has(c.tagName)){c.replaceWith(...c.childNodes);return;}
+    [...c.attributes].forEach(a=>c.removeAttribute(a.name));
+  });
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
 function buildText(w,body,tools){
   const ed=h('div',{class:'ed',contenteditable:'true',spellcheck:'true','data-ph':'Type here. Select text, then use B, I, or List above.','aria-label':'Text box'});
-  ed.innerHTML=w.data.html||'';
+  ed.innerHTML=cleanHTML(w.data.html||'');
   ed.style.fontSize='max(var(--min-text,0px),'+w.data.fs+'px)';
   const sync=()=>{w.data.html=ed.innerHTML;save();};
   ed.addEventListener('input',sync);
@@ -1172,6 +1237,11 @@ const LINKDOC={
 /* An uploaded PDF and its marks live in memory (PDFMEM, by widget id) until Keep saves them.
    Unkept PDFs and unsaved marks last until the page reloads. */
 const PDFMEM={};
+window.addEventListener('beforeunload',e=>{
+  const ids=new Set(S.screens.flatMap(sc=>sc.widgets.map(x=>x.id)));
+  const unsaved=Object.keys(PDFMEM).some(id=>ids.has(id)&&(PDFMEM[id].dirty||!PDFMEM[id].kept));
+  if(unsaved){e.preventDefault();e.returnValue='';}
+});
 function buildLinkDoc(kind,w,body,tools){
   const K=LINKDOC[kind];
   body.classList.add('flush','linkdoc');
@@ -1230,7 +1300,7 @@ function buildLinkDoc(kind,w,body,tools){
 function pdfView(w,body){
   const kept=w.data.pdf;
   let mem=PDFMEM[w.id];
-  if(!mem)mem=PDFMEM[w.id]={blob:null,name:kept.name,marks:JSON.parse(JSON.stringify(kept.marks||{})),dirty:false};
+  if(!mem)mem=PDFMEM[w.id]={blob:null,name:kept.name,marks:JSON.parse(JSON.stringify(kept.marks||{})),dirty:false,kept:true};
   mem.page=mem.page||1;
   let doc=null,drawing=false,tool='pen',color='ink',busy=0;
   const page=h('canvas',{class:'pdf-page'}),ink=h('canvas',{class:'pdf-ink'});
@@ -1300,20 +1370,23 @@ function pdfView(w,body){
         w.data.pdf={file:id,name:mem.name,marks:{}};
       }
       w.data.pdf.marks=JSON.parse(JSON.stringify(mem.marks));
-      mem.dirty=false;save();toast('Kept '+mem.name+' and its marks on this computer.');
+      mem.dirty=false;mem.kept=true;save();toast('Kept '+mem.name+' and its marks on this computer.');
     }catch(e){toast('Could not keep the PDF. The browser may be out of space.');}
     keepB.disabled=false;syncKeep();
   });
-  new ResizeObserver(()=>render()).observe(stage);
+  const ro=new ResizeObserver(()=>render());ro.observe(stage);
+  let task=null;
+  cleanups.push(()=>{ro.disconnect();busy++;if(task)task.destroy();else if(doc)doc.destroy();doc=null;});
   syncKeep();syncTools();
   (async()=>{
     try{
       if(!mem.blob)mem.blob=await FILES.get(kept.file);
       if(!mem.blob){label.textContent='This PDF is no longer on this computer. Use Change to upload it again.';return;}
       await loadScript(LIBS.pdf);pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS.pdfWorker;
-      doc=await pdfjsLib.getDocument({data:new Uint8Array(await mem.blob.arrayBuffer())}).promise;
+      task=pdfjsLib.getDocument({data:new Uint8Array(await mem.blob.arrayBuffer())});
+      doc=await task.promise;
       mem.page=Math.min(mem.page,doc.numPages);render();
-    }catch(e){label.textContent='Could not open this PDF. Check the internet connection, then try again.';}
+    }catch(e){if(stage.isConnected)label.textContent='Could not open this PDF. Check the internet connection, then try again.';}
   })();
 }
 const buildSlides=(w,b,t)=>buildLinkDoc('slides',w,b,t);
@@ -2062,7 +2135,7 @@ function icon(k){
   i.innerHTML='<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[k]||'')+'</svg>';
   return i;
 }
-/* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
+/* The Add widget menu is a three-column grid in this order. Hovering a tile shows its description. */
 const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice','points','cam'];
 function addPop(anchor){
   openPop(anchor,box=>{
@@ -2308,8 +2381,6 @@ async function floatClock(){
     if(!w){d.body.classList.remove('done');return;}
     const rt=rtOf(w);
     let left=rt.running?(rt.endAt-Date.now())/1000:rt.left;
-    /* If the timer's screen is not showing, the board cannot ring the bell, so ring it here. */
-    if(rt.running&&left<=0&&!boardEl.querySelector('[data-id="'+w.id+'"]')){rt.running=false;rt.left=0;rt.done=true;if(w.data.bell)beep();}
     if(rt.done) left=0;
     d.body.classList.toggle('done',!!rt.done);
     const svg=dialSVG(left,w.data.dur,Object.assign({done:rt.done},c,rt.done?{ink:v('--on-sun'),panel:v('--sun')}:{}));
@@ -2347,7 +2418,7 @@ function newScreenPop(anchor){
 function saveTemplatePop(anchor,sc){
   closePop();
   openPop(anchor,box=>{
-    const nm=h('input',{class:'fld',value:sc.name||'','aria-label':'Template name',placeholder:'Template name, like Do now'});
+    const nm=h('input',{class:'fld',value:sc.name||'','aria-label':'Template name',placeholder:'Template name, like Warm up'});
     const go=()=>{
       const name=nm.value.trim()||'Template';
       const t={id:uid(),name,bg:sc.bg,widgets:cloneWidgets(sc.widgets)};
@@ -2552,6 +2623,7 @@ if(!S.since){S.since=Date.now();save();}
     setTimeout(()=>toast(S.lastBackup?'It has been over two weeks since your last backup.':'You have not downloaded a backup yet.',{label:'Download backup',fn:()=>downloadBackup()}),2500);
 }
 record();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});}catch(e){}
 FILES.keys().then(keys=>{const keep=fileRefs(S);keys.forEach(k=>{if(!keep.has(k))FILES.del(k);});}).catch(()=>{});
 if(S.calm){document.body.classList.add('calm');$('#pCalm').classList.add('primary');$('#pCalm').setAttribute('aria-pressed','true');}
 renderTabs();

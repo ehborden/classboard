@@ -88,3 +88,44 @@ test('backups carry kept PDFs and restore them', async ({ page }, info) => {
   await expect(p2.locator('.pdf-label')).toHaveText('Page 1 of 3', { timeout: 20000 });
   await fresh.close();
 });
+
+test('leaving with an unkept PDF asks first; a kept PDF with no new marks does not', async ({ page, context }) => {
+  await openApp(page, docBoard());
+  await page.setInputFiles('.doc input[type=file]', PDF);
+  await expect(page.locator('.pdf-label')).toHaveText('Page 1 of 3', { timeout: 20000 });
+  const asked = new Promise(res => page.once('dialog', d => { res(d.type()); d.dismiss(); }));
+  await page.close({ runBeforeUnload: true });
+  expect(await asked).toBe('beforeunload');
+
+  const p2 = await context.newPage();
+  await openApp(p2, docBoard());
+  await p2.setInputFiles('.doc input[type=file]', PDF);
+  await expect(p2.locator('.pdf-label')).toHaveText('Page 1 of 3', { timeout: 20000 });
+  await p2.click('.pdf-keep'); await settle(p2);
+  let dialogs = 0; p2.on('dialog', d => { dialogs++; d.accept(); });
+  await p2.close({ runBeforeUnload: true });
+  expect(dialogs).toBe(0);
+});
+
+test('switching away from a PDF closes its document instead of piling them up', async ({ page }) => {
+  // Each open PDF runs its own background worker, so count the live ones.
+  await page.addInitScript(() => {
+    window.liveWorkers = 0;
+    const W = window.Worker;
+    window.Worker = class extends W {
+      constructor(...a) { super(...a); window.liveWorkers++; }
+      terminate() { if (!this._ended) { this._ended = true; window.liveWorkers--; } return super.terminate(); }
+    };
+  });
+  const s = docBoard(); s.screens.push({ id: 's2', name: 'Other', bg: 'mist', widgets: [] });
+  await openApp(page, s);
+  await page.setInputFiles('.doc input[type=file]', PDF);
+  await expect(page.locator('.pdf-label')).toHaveText('Page 1 of 3', { timeout: 20000 });
+  for (let i = 0; i < 4; i++) {
+    await page.click('.tab >> text=Other');
+    await page.click('.tab >> text=Screen 1');
+    await expect(page.locator('.pdf-label')).toHaveText('Page 1 of 3', { timeout: 20000 });
+  }
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.liveWorkers)).toBeLessThanOrEqual(1);
+});

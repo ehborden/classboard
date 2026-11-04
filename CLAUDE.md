@@ -27,11 +27,15 @@ Grep `index.html` for an em dash before committing; the count must be 0.
 
 `index.html` is organized into banner-commented sections: `/* ---------- Name ---------- */`. Grep for these to navigate: State and saving, Undo, Board, one section per widget (Clock, Timer, Text, Image, Music, Agenda, Task steps, Seating chart, Names, partners, groups), Reading names from lists..., Classes dialog, Popovers, Settings menu, Calm mode, Board name, Backup, Floating clock and timer, Screens, Present mode, Toolbar wiring.
 
-**State.** One object `S` holds everything: `screens` (each with `widgets`), `classes`, `active` screen id, and settings (`title`, `calm`, `floatMode`, `lastBackup`, `since`). `save()` debounces a write to localStorage by 300 ms; `flush()` writes immediately. Every load and every import runs through `normalize()`.
+**State.** One object `S` holds everything: `screens` (each with `widgets`), `classes`, `active` screen id, and settings (`title`, `calm`, `floatMode`, `lastBackup`, `since`). `save()` marks the state dirty and debounces a write to localStorage by 300 ms; `flush()` writes immediately. `pagehide` saves only when dirty, and a `storage` listener adopts another tab's newer save, so two tabs cannot overwrite each other with stale copies. Every load, import, and other-tab update runs through `normalize()`, which fills any missing widget field from `TYPES[type].data()`.
 
 **Widgets.** `TYPES` maps a type to its label, description, default size and data, and a `build(w, body, tools, el)` function. A widget's settings live in `w.data` and are saved with the board. Anything per-session (a running timer) lives outside `S`, for example `RT` for timers. `renderBoard()` rebuilds every widget on the current screen; widgets register per-tick updates in `ticks` and class-list listeners in `classHooks`. To add a widget: add it to `TYPES`, add an icon to `ICONS`, and place it in `MENU`.
 
-**Undo.** `flush()` calls `record()`, which stores a JSON snapshot of `S` whenever it changed. Long `data:` image strings are swapped for ids held once in `IMG`, so snapshots stay small. Keys in `NO_UNDO` (`active`, `floatMode`, `lastBackup`, `since`) are left out, so switching screens is not an undo step. `undo()` restores the previous snapshot and re-renders.
+**Timers** finish in `checkTimers()`, which runs every half second for every running timer in `RT`, on screen or not, and rings the bell if it is on.
+
+**Robustness.** Each widget build is wrapped in try/catch, so a broken widget shows a message instead of blanking the screen. Text box HTML goes through `cleanHTML()` (simple tags only, no attributes) because it can come from backups and templates. Widgets that hold resources (the camera, PDF documents) register a stop function in `cleanups`, which `renderBoard()` runs first.
+
+**Undo.** `flush()` calls `record()`, which stores a JSON snapshot of `S` whenever it changed. Long `data:` image strings are swapped for ids held once in `IMG`, so snapshots stay small. Consecutive typing in the same field updates one step instead of adding one per pause. Keys in `NO_UNDO` (`active`, `floatMode`, `lastBackup`, `since`) are left out, so switching screens is not an undo step. `undo()` restores the previous snapshot and re-renders.
 
 **Pen marks.** The board pen (`pen`, `setPen`) is never saved. PDF marks are stored per page as strokes in `w.data.pdf.marks`, only when the teacher clicks Keep; until then they live in `PDFMEM`. Both draw through `drawStrokes`, with points stored as fractions of the drawing area.
 

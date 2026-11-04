@@ -15,6 +15,7 @@ Everything you make (screens, widgets, class lists, seating charts, settings) is
 - **One browser on one computer.** Boards made in Chrome on your classroom computer stay there. A different computer, a different browser, or a private window starts fresh.
 - **The live site and a downloaded file are separate places.** Boards made at the github.io link do not show up in a double-clicked copy, and the reverse. Pick one and stick with it.
 - **Clearing browsing data deletes your boards.** Clearing "cookies and site data" in Chrome wipes them. So does using a private window, and so might a school computer that resets on logout.
+- **Use Chrome or Edge, not Safari.** Safari deletes a site's saved data after 7 days of using Safari without visiting that site. The count is days you use Safari, not calendar days, so a break with the computer off does not trigger it, but two weeks of using Safari for other things without opening Classboard would. Classboard also asks Chrome not to clear its data when the disk runs low.
 
 ## Backup and Import
 
@@ -28,7 +29,9 @@ To move to a new computer: Download backup on the old one, then Import backup on
 
 ## Undo
 
-**Undo** in the top bar (or Cmd+Z outside a text field) steps back through up to 40 changes: a removed widget, a deleted class, a cleared seating chart, an import. The history resets when you reload the page. Switching screens is not an undo step.
+**Undo** in the top bar (or Cmd+Z on a Mac, Ctrl+Z on Windows, outside a text field) steps back through up to 40 changes: a removed widget, a deleted class, a cleared seating chart, an import. Typing in one box counts as one change. The history resets when you reload the page. Switching screens is not an undo step.
+
+**Two tabs:** if Classboard is open in two tabs, for example a projector window and a laptop window, a change in one shows up in the other, and closing an older tab does not undo newer work.
 
 ## Features
 
@@ -58,7 +61,7 @@ These come from research on classroom displays and executive functioning, and th
 - One font, Source Sans 3, at weights 500 to 700 only.
 - Text and accent colors meet 7:1 contrast, because projectors wash colors out.
 - Color is never the only signal; it is paired with a change in weight.
-- No red. No flashing. The timer is silent by default.
+- No red, including confirm buttons, which turn solid ink and change their wording. No flashing. The timer is silent by default.
 - In Present mode, text is sized for a back row up to 20 feet away.
 - No em dashes in any text in the app.
 
@@ -82,7 +85,7 @@ npx playwright install chromium
 npm test
 ```
 
-The tests open `index.html` straight from disk and cover backup and import, Undo, the agenda, timer, task steps, seating chart, calm mode, and importing students from every supported file type. They never touch your real boards: each test starts in an empty browser. The import helpers that the app normally loads from the internet are served from `node_modules` instead, so the tests run offline.
+The tests open `index.html` straight from disk and cover backup and import (including kept PDFs), Undo, two tabs at once, the agenda, timer (including the bell from another screen), task steps, seating chart, templates, the board pen, uploaded PDFs and their marks, dice, points, the document camera (with a fake camera), calm mode, broken or unsafe saved data, and importing students from every supported file type. They never touch your real boards: each test starts in an empty browser. The import helpers that the app normally loads from the internet are served from `node_modules` instead, so the tests run offline.
 
 ## Known limits
 

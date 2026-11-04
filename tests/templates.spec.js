@@ -3,7 +3,7 @@ const { openApp, stored, settle, board, widget } = require('./helpers');
 
 test('save a screen as a template, then start a new screen from it with its contents', async ({ page }) => {
   await openApp(page, board([
-    widget('agenda', { title: 'Do now', items: [{ id: 'a', txt: 'Warm up', done: false }] }),
+    widget('agenda', { title: 'Warm up', items: [{ id: 'a', txt: 'Warm up', done: false }] }),
     widget('timer', { dur: 420 }, [0.5, 0.1, 0.3, 0.6]),
   ]));
   // With no templates yet, + makes a default screen right away.
@@ -13,14 +13,14 @@ test('save a screen as a template, then start a new screen from it with its cont
 
   await page.click('#bGear'); await page.click('.pop >> text=Screen settings');
   await page.click('.pop >> text=Save as template');
-  await page.fill('.pop input', 'Do now');
+  await page.fill('.pop input', 'Warm up');
   await page.click('.pop >> text=Save template');
-  expect((await stored(page)).templates.map(t => t.name)).toEqual(['Do now']);
+  expect((await stored(page)).templates.map(t => t.name)).toEqual(['Warm up']);
 
   await page.click('.tab.add');
   await expect(page.locator('.pop')).toContainText('Your templates');
-  await page.click('.pop .opt >> text=Do now');
-  await expect(page.locator('.tab.on')).toHaveText('Do now');
+  await page.click('.pop .opt >> text=Warm up');
+  await expect(page.locator('.tab.on')).toHaveText('Warm up');
   await expect(page.locator('.ag-txt')).toHaveValue('Warm up');
   await expect(page.locator('.timer .dialbox svg text').last()).toHaveText('7:00');
 

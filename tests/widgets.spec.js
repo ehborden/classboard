@@ -1,12 +1,12 @@
 const { test, expect } = require('@playwright/test');
 const { openApp, stored, settle, board, widget } = require('./helpers');
 
-const agendaBoard = () => board([widget('agenda', { title: 'Today', items: ['Do now', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket'].map((t, i) => ({ id: 'a' + i, txt: t, done: false })) })]);
+const agendaBoard = () => board([widget('agenda', { title: 'Today', items: ['Warm up', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket'].map((t, i) => ({ id: 'a' + i, txt: t, done: false })) })]);
 const rowsState = page => page.$$eval('.ag-row', rs => rs.map(r => (r.classList.contains('now') ? '>' : '') + r.querySelector('.ag-txt').value));
 
 test('agenda: the first unchecked row is current, with no times', async ({ page }) => {
   await openApp(page, agendaBoard());
-  await expect(page.locator('.ag-row.now .ag-txt')).toHaveValue('Do now');
+  await expect(page.locator('.ag-row.now .ag-txt')).toHaveValue('Warm up');
   await page.locator('.ag-chk').nth(0).click();
   await page.locator('.ag-chk').nth(1).click();
   await expect(page.locator('.ag-row.now .ag-txt')).toHaveValue('Practice');
@@ -17,7 +17,7 @@ test('agenda: Enter adds a row, and Present shows now plus the next two', async 
   await openApp(page, agendaBoard());
   await page.locator('.ag-txt').nth(4).press('Enter');
   await page.keyboard.type('Pack up');
-  expect(await rowsState(page)).toEqual(['>Do now', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket', 'Pack up']);
+  expect(await rowsState(page)).toEqual(['>Warm up', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket', 'Pack up']);
   await page.locator('.ag-chk').nth(0).click();
   await page.click('#bPresent');
   const visible = await page.$$eval('.ag-row', rs => rs.filter(r => getComputedStyle(r).display !== 'none').map(r => r.querySelector('.ag-txt').value));
@@ -32,7 +32,7 @@ test('agenda: drag the handle to reorder rows', async ({ page }) => {
   await page.mouse.down();
   await page.mouse.move(grip.x + 4, target.y + 3, { steps: 8 });
   await page.mouse.up();
-  expect((await stored(page)).screens[0].widgets[0].data.items.map(i => i.txt)).toEqual(['Do now', 'Exit ticket', 'Mini lesson', 'Practice', 'Share out']);
+  expect((await stored(page)).screens[0].widgets[0].data.items.map(i => i.txt)).toEqual(['Warm up', 'Exit ticket', 'Mini lesson', 'Practice', 'Share out']);
 });
 
 test('timer: presets, typed times, and a silent default', async ({ page }) => {
