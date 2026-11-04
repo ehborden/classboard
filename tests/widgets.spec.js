@@ -93,7 +93,7 @@ test('calm mode keeps a clock on screen and turns music off', async ({ page }) =
 test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await openApp(page);
   await page.click('#bAdd');
-  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides']);
+  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document']);
 });
 
 test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
@@ -131,6 +131,29 @@ test('slides: pasting a link shows the deck, and Change keeps a way back', async
   await page.click('.slides >> text=Show slides');
   await expect(page.locator('.slides iframe')).toHaveAttribute('src', /action=embedview/);
   await page.click('[title="Use a different presentation"]');
-  await page.click('.slides >> text=Back to the slides');
+  await page.click('.slides >> text=Back to the presentation');
   await expect(page.locator('.slides iframe')).toHaveCount(1);
+});
+
+test('document: Word, Google Docs, Sheets, and Drive PDFs become embeddable addresses', async ({ page }) => {
+  await openApp(page);
+  const r = await page.evaluate(() => {
+    const f = window.classboardTest.officeURL;
+    return [
+      f('https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1'),
+      f('https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2'),
+      f('https://docs.google.com/document/d/1Doc-id/edit'),
+      f('https://docs.google.com/spreadsheets/d/1Sheet/edit#gid=0'),
+      f('https://drive.google.com/file/d/1PdfFile/view?usp=sharing'),
+      f('https://drive.google.com/open?id=1Other'),
+    ].map(x => x.src || 'ERROR: ' + x.error);
+  });
+  expect(r).toEqual([
+    'https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1&action=embedview',
+    'https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2&action=embedview',
+    'https://docs.google.com/document/d/1Doc-id/preview',
+    'https://docs.google.com/spreadsheets/d/1Sheet/preview',
+    'https://drive.google.com/file/d/1PdfFile/preview',
+    'https://drive.google.com/file/d/1Other/preview',
+  ]);
 });
