@@ -93,7 +93,7 @@ test('calm mode keeps a clock on screen and turns music off', async ({ page }) =
 test('the Add widget menu is a grid in the chosen order', async ({ page }) => {
   await openApp(page);
   await page.click('#bAdd');
-  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document']);
+  await expect(page.locator('.wtile span:last-child')).toHaveText(['Agenda', 'Timer', 'Clock', 'Seating chart', 'Task steps', 'Text box', 'Image', 'Names and groups', 'Music', 'Slides', 'Document', 'Dice']);
 });
 
 test('slides: PowerPoint, SharePoint, and Google links become embeddable addresses', async ({ page }) => {
@@ -161,6 +161,7 @@ test('document: Word, Google Docs, Sheets, and Drive PDFs become embeddable addr
 test('dice: roll any number of dice, and the total matches', async ({ page }) => {
   await openApp(page, board([widget('dice', { n: 3, sides: 20, vals: [] })]));
   await page.click('.dice >> text=Roll');
+  await expect(page.locator('.dice .btn.primary')).toBeEnabled();
   await expect(page.locator('.dice-total')).toHaveText(/^Total: \d+$/);
   const vals = (await page.locator('.die').allTextContents()).map(Number);
   expect(vals).toHaveLength(3);

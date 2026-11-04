@@ -887,10 +887,11 @@ function buildDice(w,body){
     if(D.sides===6&&v){const f=h('div',{class:'die pips','aria-label':String(v)});for(let i=0;i<9;i++)f.append(h('i',{class:PIPS[v].includes(i)?'on':''}));return f;}
     return h('div',{class:'die num'},v?String(v):'?');
   };
+  /* While the dice spin, the total stays blank so it never shows a number that is not the result. */
   function draw(vals){
-    vals=vals||D.vals;
+    const rolling=!!vals;vals=vals||D.vals;
     tray.replaceChildren(...Array.from({length:D.n},(_,i)=>face(vals[i])));
-    total.textContent=D.n>1&&vals.length?'Total: '+vals.reduce((a,b)=>a+b,0):'';
+    total.textContent=!rolling&&D.n>1&&vals.length?'Total: '+vals.reduce((a,b)=>a+b,0):'';
   }
   const rnd=()=>1+Math.floor(Math.random()*D.sides);
   roll.addEventListener('click',()=>{
