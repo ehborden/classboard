@@ -195,6 +195,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 .dice-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center}
 .present .dice-bar label{display:none}
 .music-frame{flex:1;width:100%;min-height:0;border:0;display:block}
+.pdf-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--panel2);overflow:hidden}
+.pdf-page{display:block;background:#fff;box-shadow:var(--shadow)}
+.pdf-ink{position:absolute;touch-action:none;pointer-events:none}
+.pdf-ink.drawing{pointer-events:auto;cursor:crosshair}
+.pdf-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:6px;border-top:1px solid var(--line);background:var(--panel)}
+.pdf-bar .btn{padding:5px 11px}
+.pdf-label{min-width:7em;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.pdf-tools{display:contents}
+.pdf-tools .chip{font-size:13px;padding:4px 10px}
+.pdf-tools .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.pdf-keep[hidden]{display:none}
+.present .pdf-keep{display:none}
 .linkdoc .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .linkdoc .pk-chips{justify-content:center;align-items:center}
 .sl-start{gap:8px;overflow:auto}
@@ -518,6 +530,26 @@ function toast(msg,act){
   $('#toasts').append(t);
   setTimeout(()=>t.remove(),act?9000:5500);
 }
+
+/* ---------- Kept files ---------- */
+/* Kept PDFs are too big for localStorage, so they live in IndexedDB, keyed by an id that the widget
+   saves. Backups include them. Files no saved widget or template points to are removed at startup. */
+const FILES={
+  db:null,
+  open(){return this.db||(this.db=new Promise((res,rej)=>{const r=indexedDB.open('classboard-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}));},
+  async run(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('files',mode),q=fn(t.objectStore('files'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);});},
+  put(id,blob){return this.run('readwrite',st=>st.put(blob,id));},
+  get(id){return this.run('readonly',st=>st.get(id));},
+  del(id){return this.run('readwrite',st=>st.delete(id));},
+  keys(){return this.run('readonly',st=>st.getAllKeys());}
+};
+function fileRefs(D){
+  const ids=new Set(),scan=ws=>(ws||[]).forEach(w=>{if(w.data&&w.data.pdf&&w.data.pdf.file)ids.add(w.data.pdf.file);});
+  (D.screens||[]).forEach(sc=>scan(sc.widgets));(D.templates||[]).forEach(t=>scan(t.widgets));
+  return ids;
+}
+const blobToB64=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.readAsDataURL(b);});
+const b64ToBlob=(b64,type)=>{const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:type||'application/pdf'});};
 
 /* ---------- Undo ---------- */
 /* Every saved change becomes a snapshot. Image data is kept once in IMG and referenced by id, so
@@ -1137,26 +1169,38 @@ const LINKDOC={
   slides:{title:'Show a PowerPoint',what:'presentation',app:'PowerPoint',hint:'Google Slides links work too.'},
   doc:{title:'Show a document',what:'document',app:'Word or PowerPoint',hint:'PDFs in OneDrive, and Google Docs, Sheets, and Drive links work too.'}
 };
+/* An uploaded PDF and its marks live in memory (PDFMEM, by widget id) until Keep saves them.
+   Unkept PDFs and unsaved marks last until the page reloads. */
+const PDFMEM={};
 function buildLinkDoc(kind,w,body,tools){
   const K=LINKDOC[kind];
   body.classList.add('flush','linkdoc');
   let editing=false;
+  const hasPDF=()=>kind==='doc'&&!!(PDFMEM[w.id]||w.data.pdf);
   const changeB=tbtn('Change','Use a different '+K.what,()=>{editing=true;draw();});
   tools.append(changeB);
   function use(u){
-    w.data.url=u;
+    w.data.url=u;w.data.pdf=null;delete PDFMEM[w.id];
     w.data.recent=[u,...(w.data.recent||[]).filter(x=>x!==u)].slice(0,5);
     editing=false;save();draw();
   }
   function draw(){
     const got=w.data.url&&officeURL(w.data.url),src=got&&got.src;
-    changeB.hidden=!src||editing;
+    changeB.hidden=!(src||hasPDF())||editing;
+    if(hasPDF()&&!editing){pdfView(w,body);return;}
     if(src&&!editing){
       body.replaceChildren(h('iframe',{class:'music-frame',src,title:K.title,allowfullscreen:true,
         allow:'fullscreen',referrerpolicy:'strict-origin-when-cross-origin'}));
       return;
     }
     const fld=h('textarea',{class:'fld sl-fld',rows:'2',placeholder:'Paste the Embed code or a share link','aria-label':K.app+' Embed code or link'});
+    const up=h('input',{type:'file',accept:'application/pdf,.pdf',hidden:true,'aria-label':'Upload a PDF'});
+    up.addEventListener('change',()=>{
+      const f=up.files[0];up.value='';if(!f)return;
+      if(!/pdf$/i.test(f.type)&&!/\.pdf$/i.test(f.name)){err.textContent='That file is not a PDF. In Word, use File, then Save As, and choose PDF.';return;}
+      PDFMEM[w.id]={blob:f,name:f.name,marks:{},dirty:false};w.data.pdf=null;w.data.url='';
+      editing=false;save();draw();
+    });
     const err=h('div',{class:'cl-count sl-err'});
     const go=()=>{const r=officeURL(fld.value);if(r.error){err.textContent=r.error;return;}use(fld.value.trim());};
     fld.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go();}if(e.key==='Escape'&&src){e.stopPropagation();editing=false;draw();}});
@@ -1171,7 +1215,9 @@ function buildLinkDoc(kind,w,body,tools){
         h('li',null,'Paste it below. A share link works too.')),
       fld,
       h('div',{class:'row'},h('button',{class:'btn primary',type:'button',onclick:go},kind==='slides'?'Show slides':'Show document'),
-        src?h('button',{class:'btn',type:'button',onclick:()=>{editing=false;draw();}},'Back to the '+K.what):null),
+        kind==='doc'?h('button',{class:'btn',type:'button',onclick:()=>up.click()},'Or upload a PDF'):null,
+        src||hasPDF()?h('button',{class:'btn',type:'button',onclick:()=>{editing=false;draw();}},'Back to the '+(hasPDF()?'PDF':K.what)):null),
+      up,
       err,
       h('div',{class:'cl-count'},'If it does not appear, set the file to Anyone with the link can view, then try again. '+K.hint),
       recent.length?h('div',{class:'pk-chips'},h('span',{class:'cl-count'},'Recent:'),
@@ -1179,6 +1225,96 @@ function buildLinkDoc(kind,w,body,tools){
     if(editing) setTimeout(()=>fld.focus(),0);
   }
   draw();
+}
+/* Shows an uploaded PDF one page at a time, with marks drawn on each page. */
+function pdfView(w,body){
+  const kept=w.data.pdf;
+  let mem=PDFMEM[w.id];
+  if(!mem)mem=PDFMEM[w.id]={blob:null,name:kept.name,marks:JSON.parse(JSON.stringify(kept.marks||{})),dirty:false};
+  mem.page=mem.page||1;
+  let doc=null,drawing=false,tool='pen',color='ink',busy=0;
+  const page=h('canvas',{class:'pdf-page'}),ink=h('canvas',{class:'pdf-ink'});
+  const stage=h('div',{class:'pdf-stage'},page,ink);
+  const label=h('span',{class:'pdf-label'},'Loading...');
+  const prev=h('button',{class:'btn',type:'button','aria-label':'Previous page'},'‹');
+  const next=h('button',{class:'btn',type:'button','aria-label':'Next page'},'›');
+  const drawB=h('button',{class:'btn',type:'button','aria-pressed':'false'},'Draw');
+  const tools2=h('span',{class:'pdf-tools'});
+  const keepB=h('button',{class:'btn primary pdf-keep',type:'button'});
+  body.replaceChildren(stage,h('div',{class:'pdf-bar'},prev,label,next,h('span',{class:'pen-sep'}),drawB,tools2,keepB));
+  const marks=()=>mem.marks[mem.page]||(mem.marks[mem.page]=[]);
+  function syncKeep(){
+    keepB.hidden=!!w.data.pdf&&!mem.dirty;
+    keepB.textContent=w.data.pdf?'Save changes':'Keep PDF and marks';
+    keepB.title=w.data.pdf?'Save the marks you added':'Keep this PDF and its marks on this computer. Otherwise they are gone after a reload.';
+  }
+  function syncTools(){
+    drawB.classList.toggle('primary',drawing);drawB.setAttribute('aria-pressed',String(drawing));
+    ink.classList.toggle('drawing',drawing);
+    const t=(k,l)=>h('button',{class:'chip'+(tool===k?' on':''),type:'button','aria-pressed':String(tool===k),onclick:()=>{tool=k;syncTools();}},l);
+    tools2.replaceChildren(...(drawing?[t('pen','Pen'),t('hl','Highlighter'),t('eraser','Eraser'),
+      ...PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(color===k?' on':''),type:'button','aria-label':k+' ink','aria-pressed':String(color===k),onclick:()=>{color=k;tool='pen';syncTools();}});b.style.background=penColor(k);return b;}),
+      h('button',{class:'chip',type:'button',onclick:()=>{marks().pop();mem.dirty=true;paintInk();syncKeep();}},'Undo'),
+      h('button',{class:'chip',type:'button',onclick:()=>{mem.marks[mem.page]=[];mem.dirty=true;paintInk();syncKeep();}},'Clear page')]:[]));
+  }
+  drawB.addEventListener('click',()=>{drawing=!drawing;syncTools();});
+  function paintInk(){
+    const r=page.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+    ink.width=Math.round(r.width*dpr);ink.height=Math.round(r.height*dpr);
+    Object.assign(ink.style,{width:r.width+'px',height:r.height+'px',left:page.offsetLeft+'px',top:page.offsetTop+'px'});
+    const g=ink.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,r.width,r.height);
+    drawStrokes(g,marks(),r.width,r.height);
+  }
+  async function render(){
+    if(!doc)return;
+    const my=++busy;
+    const pg=await doc.getPage(mem.page),vp1=pg.getViewport({scale:1});
+    const sw=Math.max(50,stage.clientWidth-16),sh=Math.max(50,stage.clientHeight-16),sc=Math.min(sw/vp1.width,sh/vp1.height);
+    const dpr=window.devicePixelRatio||1,vp=pg.getViewport({scale:sc*dpr});
+    const tmp=document.createElement('canvas');tmp.width=vp.width;tmp.height=vp.height;
+    await pg.render({canvasContext:tmp.getContext('2d'),viewport:vp}).promise;
+    if(my!==busy)return;
+    page.width=tmp.width;page.height=tmp.height;page.getContext('2d').drawImage(tmp,0,0);
+    page.style.width=vp.width/dpr+'px';page.style.height=vp.height/dpr+'px';
+    label.textContent='Page '+mem.page+' of '+doc.numPages;
+    prev.disabled=mem.page<=1;next.disabled=mem.page>=doc.numPages;
+    paintInk();
+  }
+  prev.addEventListener('click',()=>{if(mem.page>1){mem.page--;render();}});
+  next.addEventListener('click',()=>{if(doc&&mem.page<doc.numPages){mem.page++;render();}});
+  let cur=null;
+  const pos=e=>{const r=ink.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height,e.pressure||.5];};
+  ink.addEventListener('pointerdown',e=>{
+    if(!drawing||e.button>0)return;
+    e.preventDefault();e.stopPropagation();ink.setPointerCapture(e.pointerId);
+    cur={tool,color:tool==='hl'?'hl':color,size:'thin',stylus:e.pointerType==='pen',pts:[pos(e)]};
+    marks().push(cur);mem.dirty=true;paintInk();syncKeep();
+  });
+  ink.addEventListener('pointermove',e=>{if(!cur)return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>cur.pts.push(pos(ev)));paintInk();});
+  ink.addEventListener('pointerup',()=>{cur=null;});ink.addEventListener('pointercancel',()=>{cur=null;});
+  keepB.addEventListener('click',async()=>{
+    keepB.disabled=true;
+    try{
+      if(!w.data.pdf){
+        const id=uid();await FILES.put(id,mem.blob);
+        w.data.pdf={file:id,name:mem.name,marks:{}};
+      }
+      w.data.pdf.marks=JSON.parse(JSON.stringify(mem.marks));
+      mem.dirty=false;save();toast('Kept '+mem.name+' and its marks on this computer.');
+    }catch(e){toast('Could not keep the PDF. The browser may be out of space.');}
+    keepB.disabled=false;syncKeep();
+  });
+  new ResizeObserver(()=>render()).observe(stage);
+  syncKeep();syncTools();
+  (async()=>{
+    try{
+      if(!mem.blob)mem.blob=await FILES.get(kept.file);
+      if(!mem.blob){label.textContent='This PDF is no longer on this computer. Use Change to upload it again.';return;}
+      await loadScript(LIBS.pdf);pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS.pdfWorker;
+      doc=await pdfjsLib.getDocument({data:new Uint8Array(await mem.blob.arrayBuffer())}).promise;
+      mem.page=Math.min(mem.page,doc.numPages);render();
+    }catch(e){label.textContent='Could not open this PDF. Check the internet connection, then try again.';}
+  })();
 }
 const buildSlides=(w,b,t)=>buildLinkDoc('slides',w,b,t);
 const buildDoc=(w,b,t)=>buildLinkDoc('doc',w,b,t);
@@ -2022,11 +2158,14 @@ brandEl.addEventListener('keydown',e=>{if(e.key==='Enter')brandEl.blur();});
 brandEl.addEventListener('blur',()=>{if(!brandEl.value.trim()){S.title='';save();syncBrand();}});
 
 /* ---------- Backup ---------- */
-function downloadBackup(note){
+async function downloadBackup(note){
   S.lastBackup=Date.now();
   clearTimeout(saveT);flush();
+  /* Copy the boards now, so an import that replaces them right after cannot change this backup. */
+  const data=JSON.parse(JSON.stringify(S)),files={};
+  for(const id of fileRefs(data)){try{const b=await FILES.get(id);if(b)files[id]=await blobToB64(b);}catch(e){}}
   const d=new Date(),day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+(note?' '+note:'');
-  const blob=new Blob([JSON.stringify({app:'classboard',v:1,saved:d.toISOString(),data:S})],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({app:'classboard',v:1,saved:d.toISOString(),data,files})],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=h('a',{href:url,download:'Classboard backup '+day+'.json'});
   document.body.append(a);a.click();a.remove();
@@ -2038,6 +2177,7 @@ function readBackup(f){
     const j=JSON.parse(txt);
     const D=j&&j.app==='classboard'&&j.data?j.data:j;
     if(!D||!Array.isArray(D.screens)||!D.screens.length) throw new Error('bad');
+    Object.defineProperty(D,'_files',{value:(j&&j.files)||{},enumerable:false});
     return normalize(D);
   });
 }
@@ -2058,10 +2198,14 @@ function backupPop(anchor){
           /* Download the current boards before replacing them, so an import can always be reversed. */
           downloadBackup('before import');
           D.lastBackup=S.lastBackup;D.since=S.since;
+          const files=D._files||{};
           S=D;Object.keys(RT).forEach(k=>delete RT[k]);
-          closePop();syncBrand();document.body.classList.toggle('calm',!!S.calm);renderTabs();renderBoard();
-          clearTimeout(saveT);
-          if(flush()) toast('Backup imported.');
+          closePop();
+          Promise.all(Object.entries(files).map(([id,b64])=>FILES.put(id,b64ToBlob(b64)).catch(()=>{}))).then(()=>{
+            syncBrand();document.body.classList.toggle('calm',!!S.calm);renderTabs();renderBoard();
+            clearTimeout(saveT);
+            if(flush()) toast('Backup imported.');
+          });
         }},'Replace my boards');
         box.replaceChildren(
           h('h3',null,'Import backup'),
@@ -2273,14 +2417,20 @@ function penDraw(){
   if(c.width!==Math.round(r.width*dpr)||c.height!==Math.round(r.height*dpr)){c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);}
   const g=c.getContext('2d');
   g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,r.width,r.height);
+  drawStrokes(g,pen.strokes,r.width,r.height);
+  c.classList.toggle('drawing',pen.on);
+  c.hidden=!pen.on&&!pen.strokes.length;
+}
+/* Draws strokes whose points are fractions of a W by H area. Shared by the board pen and PDF pages. */
+function drawStrokes(g,strokes,W,H){
   g.lineCap='round';g.lineJoin='round';
-  const base=Math.max(2,r.width/400);
-  pen.strokes.forEach(st=>{
+  const base=Math.max(2,W/400);
+  strokes.forEach(st=>{
     const wdt=base*(st.size==='thick'?3:1)*(st.tool==='hl'?6:st.tool==='eraser'?8:1);
     g.globalCompositeOperation=st.tool==='eraser'?'destination-out':'source-over';
     g.globalAlpha=st.tool==='hl'?.35:1;
     g.strokeStyle=penColor(st.color);g.fillStyle=g.strokeStyle;
-    const P=st.pts.map(p=>[p[0]*r.width,p[1]*r.height,p[2]]);
+    const P=st.pts.map(p=>[p[0]*W,p[1]*H,p[2]]);
     if(P.length===1){g.beginPath();g.arc(P[0][0],P[0][1],wdt/2,0,Math.PI*2);g.fill();return;}
     if(st.stylus&&st.tool==='pen'){
       for(let i=1;i<P.length;i++){g.lineWidth=wdt*(.4+P[i][2]*1.2);g.beginPath();g.moveTo(P[i-1][0],P[i-1][1]);g.lineTo(P[i][0],P[i][1]);g.stroke();}
@@ -2291,8 +2441,6 @@ function penDraw(){
     }
   });
   g.globalAlpha=1;g.globalCompositeOperation='source-over';
-  c.classList.toggle('drawing',pen.on);
-  c.hidden=!pen.on&&!pen.strokes.length;
 }
 function clearPen(){pen.strokes=[];penDraw();}
 function penBar(){
@@ -2404,6 +2552,7 @@ if(!S.since){S.since=Date.now();save();}
     setTimeout(()=>toast(S.lastBackup?'It has been over two weeks since your last backup.':'You have not downloaded a backup yet.',{label:'Download backup',fn:()=>downloadBackup()}),2500);
 }
 record();
+FILES.keys().then(keys=>{const keep=fileRefs(S);keys.forEach(k=>{if(!keep.has(k))FILES.del(k);});}).catch(()=>{});
 if(S.calm){document.body.classList.add('calm');$('#pCalm').classList.add('primary');$('#pCalm').setAttribute('aria-pressed','true');}
 renderTabs();
 renderBoard();
