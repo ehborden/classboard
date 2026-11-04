@@ -33,7 +33,9 @@ To move to a new computer: Download backup on the old one, then Import backup on
 ## Features
 
 - **Screens and widgets.** Drag a widget by its title bar, resize from its corner, minimize it to just its title bar. New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
-- **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Calm, and Exit.
+- **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. After that, **+** asks whether to start from the default layout, a blank screen, or a template. Rename or delete templates from the gear menu.
+- **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Pen, Calm, and Exit.
+- **Pen.** Draw anywhere on the board, over any widget, with a pen, highlighter, or eraser. It is scratch paper: nothing is saved, and marks clear with Clear, a screen switch, or a reload. A stylus draws with pressure.
 - **Agenda.** No times. The first unchecked item is the current one: bold and teal, with everything else in gray. Drag the handle to reorder. In Present mode it shows the current item and the next two.
 - **Timer.** A dial that empties as time runs out. Silent unless you turn on **Bell**. Presets of 1, 3, 5, and 10 minutes, or type a time like `7` or `2:30`.
 - **Float clock.** A small always-on-top window with the clock and timer, so they stay visible over PowerPoint. Flip between the full timer and a small clock. Works in Chrome and Edge, not Safari.
@@ -42,6 +44,10 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Names and groups.** Pick a name, make partners, or make groups, skipping absent students.
 - **Classes.** Add students one at a time, paste a list, or **Import from a file or photo**: CSV, Excel, PDF, or a picture or screenshot of a roster. Photos and scanned PDFs are read inside your browser, so names never leave the computer. Everything goes to a review box first, where you choose full names, first name and last initial, or first names only.
 - **Slides.** Show a PowerPoint from OneDrive on the board, with PowerPoint's own next and back controls. In PowerPoint for the web, use File, then Share, then Embed, and paste the code; a share link works too. The file usually needs to be shared as "Anyone with the link can view." Google Slides links also work. A .pptx file cannot be opened directly in a browser.
+- **Document.** Show a Word file or PDF from OneDrive the same way, or a Google Doc, Sheet, or Drive file. Or **upload a PDF** to mark it up: each page keeps its own marks, and nothing is saved until you click **Keep PDF and marks**. To use a Word file this way, save it as a PDF in Word first (File, then Save As, then PDF).
+- **Document camera.** Live video from a USB document camera, this computer's camera, or an iPhone through Continuity Camera, with Freeze, Mirror, and Upside down. Nothing is recorded, and the camera turns off when the widget is minimized or on another screen. Works best from the live site.
+- **Points.** By default the whole class works toward a goal and a reward, with a progress bar. Switch to Teams for named team scores.
+- **Dice.** Roll 1 to 6 dice with 4 to 20 sides, with a total.
 - **Calm mode** turns off sound, motion, and music, and always keeps a clock on screen.
 - **Board name.** Click "Classboard" in the top left to rename it, for example "Room 204."
 
@@ -81,6 +87,7 @@ The tests open `index.html` straight from disk and cover backup and import, Undo
 ## Known limits
 
 - **No sync between computers, on purpose.** Each person's setup is their own. Use Backup to move it.
-- **Images take space.** Browsers allow about 5 MB per site. A few large images can fill it, and then the app warns that it cannot save. Remove large images to make room.
+- **Images take space.** Browsers allow about 5 MB per site for boards. A few large images can fill it, and then the app warns that it cannot save. Remove large images to make room. Kept PDFs are stored separately and have much more room.
+- **Marks on OneDrive documents do not stick to pages.** Microsoft's viewer cannot be drawn into, so use the board pen over it, which clears when you move on. Marks that stay on their page work only for uploaded PDFs.
 - **Importing from a photo or PDF** needs an internet connection the first time, to load the text reader. Photos of handwriting will not read well. Always check the review box before adding names.
 - **Float clock over a fullscreen PowerPoint on a Mac** has not been tested yet.
