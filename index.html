@@ -468,6 +468,7 @@ const TYPES={
 /* Fill in missing fields so saved or imported data is safe to render. */
 function normalize(D){
   if(!Array.isArray(D.classes)) D.classes=[];
+  if(!Array.isArray(D.templates)) D.templates=[];
   D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
   D.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);s.bg=s.bg||'mist';});
   if(!D.screens.some(s=>s.id===D.active)) D.active=D.screens[0].id;
@@ -1944,11 +1945,10 @@ function screenPop(anchor){
       return b;
     }));
     const dup=h('button',{class:'btn',type:'button',onclick:()=>{
-      const c=JSON.parse(JSON.stringify(sc));
-      c.id=uid();c.name=(sc.name||'Screen')+' copy';
-      c.widgets.forEach(x=>{x.id=uid();if(x.data&&x.data.items)x.data.items.forEach(i=>{i.id=uid();});});
+      const c={id:uid(),name:(sc.name||'Screen')+' copy',bg:sc.bg,widgets:cloneWidgets(sc.widgets)};
       S.screens.splice(S.screens.indexOf(sc)+1,0,c);closePop();switchTo(c.id);
     }},'Duplicate screen');
+    const tpl=h('button',{class:'btn',type:'button',onclick:()=>saveTemplatePop(anchor,sc)},'Save as template');
     const del=h('button',{class:'btn',type:'button'},'Delete screen');
     if(S.screens.length<2) del.disabled=true;
     armed(del,'Delete screen',()=>{
@@ -1967,7 +1967,7 @@ function screenPop(anchor){
       sc.widgets=ws;save();closePop();renderBoard();
       toast('This screen now uses the default layout.');
     },'Replace this layout?');
-    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Background'),sws,h('h3',null,'Layout'),lay,dup,del);
+    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Background'),sws,h('h3',null,'Layout'),lay,tpl,dup,del);
     setTimeout(()=>name.select(),0);
   });
 }
@@ -1983,6 +1983,7 @@ function gearPop(anchor){
       h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
       h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
       h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')),
+      h('button',{class:'opt',type:'button',onclick:then(templatesPop)},'Templates',h('small',null,S.templates.length?'Rename or delete saved screens':'Save a screen from Screen settings first')),
       h('button',{class:'opt',type:'button','aria-pressed':String(!!S.calm),onclick:()=>{closePop();setCalm(!S.calm);}},'Calm mode: '+(S.calm?'on':'off'),h('small',null,'No sound, motion, or music. The clock stays.')));
   });
 }
@@ -2165,14 +2166,72 @@ async function floatClock(){
   pipWin.addEventListener('pagehide',()=>{clearInterval(iv);pipWin=null;$('#bFloat').textContent='Float clock';});
 }
 
+/* ---------- Templates ---------- */
+/* A template is a saved copy of a screen: its background, widgets, and their contents.
+   Widget ids are renewed on each use; ids inside a widget (agenda rows, chairs) stay, since
+   they only need to be unique within that widget and seat assignments point at chair ids. */
+function cloneWidgets(ws){return JSON.parse(JSON.stringify(ws)).map(x=>{x.id=uid();return x;});}
+/* from is a template, 'blank', or nothing for the default layout. */
+function newScreen(from){
+  const t=from&&typeof from==='object'?from:null;
+  const sc={id:uid(),name:t?t.name:'Screen '+(S.screens.length+1),bg:t?t.bg:cur().bg,
+    widgets:t?cloneWidgets(t.widgets):from==='blank'?[]:guideWidgets()};
+  S.screens.push(sc);switchTo(sc.id);
+}
+function newScreenPop(anchor){
+  openPop(anchor,box=>{
+    box.append(h('h3',null,'New screen'),
+      h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen();}},'Default layout',h('small',null,'Agenda, text box, clock, and timer')),
+      h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen('blank');}},'Blank',h('small',null,'An empty screen')),
+      h('h3',null,'Your templates'),
+      ...S.templates.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.widgets.length+(t.widgets.length===1?' widget':' widgets')))));
+  });
+}
+function saveTemplatePop(anchor,sc){
+  closePop();
+  openPop(anchor,box=>{
+    const nm=h('input',{class:'fld',value:sc.name||'','aria-label':'Template name',placeholder:'Template name, like Do now'});
+    const go=()=>{
+      const name=nm.value.trim()||'Template';
+      const t={id:uid(),name,bg:sc.bg,widgets:cloneWidgets(sc.widgets)};
+      const old=S.templates.findIndex(x=>x.name.toLowerCase()===name.toLowerCase());
+      if(old>=0)S.templates[old]=t;else S.templates.push(t);
+      save();closePop();
+      const big=JSON.stringify(t).length>400000;
+      toast('Saved the template '+name+'. Pick it from + when you make a new screen.'+(big?' It includes images, so it takes extra space.':''));
+    };
+    nm.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+    box.append(h('h3',null,'Save as template'),
+      h('p',null,'Saves this screen, with its widgets and their contents, to reuse for new screens.'),
+      nm,h('button',{class:'btn primary',type:'button',onclick:go},'Save template'));
+    setTimeout(()=>nm.select(),0);
+  });
+}
+function templatesPop(anchor){
+  openPop(anchor,box=>{
+    const draw=()=>{
+      box.replaceChildren(h('h3',null,'Templates'));
+      if(!S.templates.length){box.append(h('p',null,'No templates yet. Open Screen settings on a screen you like, then click Save as template.'));return;}
+      S.templates.forEach(t=>{
+        const nm=h('input',{class:'fld',value:t.name,'aria-label':'Template name'});
+        nm.addEventListener('input',()=>{t.name=nm.value;save();});
+        const del=h('button',{class:'btn',type:'button',title:'Delete template'},'Delete');
+        armed(del,'Delete',()=>{S.templates=S.templates.filter(x=>x!==t);save();draw();},'Sure?');
+        box.append(h('div',{class:'cl-row'},nm,del));
+      });
+    };
+    draw();
+  });
+}
+
 /* ---------- Screens ---------- */
 const tabsEl=$('#tabs');
 function renderTabs(){
   tabsEl.replaceChildren(...S.screens.map(sc=>
     h('button',{class:'tab'+(sc.id===S.active?' on':''),type:'button','aria-pressed':String(sc.id===S.active),onclick:()=>switchTo(sc.id)},sc.name||'Untitled')),
-    h('button',{class:'tab add',type:'button',title:'New screen','aria-label':'New screen',onclick:()=>{
-      const sc={id:uid(),name:'Screen '+(S.screens.length+1),bg:cur().bg,widgets:guideWidgets()};
-      S.screens.push(sc);switchTo(sc.id);
+    h('button',{class:'tab add',type:'button',title:'New screen','aria-label':'New screen',onclick:e=>{
+      /* With no templates saved, + makes a default screen right away. Otherwise it asks which to start from. */
+      if(!S.templates.length)newScreen();else newScreenPop(e.currentTarget);
     }},'+'));
   const on=$('.tab.on',tabsEl);if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
   syncPbar();
