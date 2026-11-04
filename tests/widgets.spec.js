@@ -179,10 +179,11 @@ test('points: the class works toward a goal by default, and teams are optional',
   await page.click('[aria-label="Take a point away"]');
   await expect(page.locator('.pt-msg')).toHaveText('Working toward: free time');
   await page.click('.points >> text=Teams');
-  await page.click('.points >> text=+ Team');
   await expect(page.locator('.pt-card')).toHaveCount(2);
+  await page.click('.points >> text=+ Team');
+  await expect(page.locator('.pt-card')).toHaveCount(3);
   await page.click('[aria-label="Give a point to Team 2"]');
   const d = (await stored(page)).screens[0].widgets[0].data;
   expect(d.pts).toBe(2);
-  expect(d.teams.map(t => t.pts)).toEqual([0, 1]);
+  expect(d.teams.map(t => t.pts)).toEqual([0, 1, 0]);
 });
