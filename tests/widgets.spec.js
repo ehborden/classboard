@@ -157,3 +157,16 @@ test('document: Word, Google Docs, Sheets, and Drive PDFs become embeddable addr
     'https://drive.google.com/file/d/1Other/preview',
   ]);
 });
+
+test('dice: roll any number of dice, and the total matches', async ({ page }) => {
+  await openApp(page, board([widget('dice', { n: 3, sides: 20, vals: [] })]));
+  await page.click('.dice >> text=Roll');
+  await expect(page.locator('.dice-total')).toHaveText(/^Total: \d+$/);
+  const vals = (await page.locator('.die').allTextContents()).map(Number);
+  expect(vals).toHaveLength(3);
+  vals.forEach(v => expect(v).toBeGreaterThanOrEqual(1) && expect(v).toBeLessThanOrEqual(20));
+  expect(await page.locator('.dice-total').textContent()).toBe('Total: ' + vals.reduce((a, b) => a + b, 0));
+  await page.selectOption('.dice select[aria-label=Sides]', '6');
+  await page.click('.dice >> text=Roll');
+  await expect(page.locator('.die.pips')).toHaveCount(3);
+});

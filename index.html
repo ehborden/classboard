@@ -147,6 +147,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 .imgwrap{flex:1;min-height:0;display:flex}
 .music .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .music .pk-chips{justify-content:center;align-items:center}
+.dice{align-items:center;justify-content:center;gap:10px}
+.dice-tray{display:flex;flex-wrap:wrap;gap:min(3cqw,14px);justify-content:center;align-items:center;flex:1;min-height:0;align-content:center}
+.die{--d:min(22cqw,30cqh,120px);width:var(--d);aspect-ratio:1;border:3px solid var(--ink);border-radius:18%;background:var(--panel);flex:none}
+.die.pips{display:grid;grid-template:repeat(3,minmax(0,1fr))/repeat(3,minmax(0,1fr));padding:calc(var(--d)*.12)}
+.die.pips i{border-radius:50%;width:72%;height:72%;place-self:center}
+.die.pips i.on{background:var(--ink)}
+.die.num{display:grid;place-items:center;font:700 min(11cqw,15cqh,60px) var(--font-display);font-variant-numeric:tabular-nums}
+.dice-total{font-weight:700;font-size:max(var(--min-text,0px),clamp(14px,5cqw,26px));min-height:1.2em}
+.dice-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center}
+.present .dice-bar label{display:none}
 .music-frame{flex:1;width:100%;min-height:0;border:0;display:block}
 .linkdoc .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .linkdoc .pk-chips{justify-content:center;align-items:center}
@@ -411,6 +421,7 @@ const TYPES={
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
   slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive, or Google Slides',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
+  dice:{label:'Dice',desc:'Roll 1 to 6 dice with 4 to 20 sides',w:.30,h:.38,data:()=>({n:2,sides:6,vals:[]}),build:(w,b,t)=>buildDice(w,b,t)},
   doc:{label:'Document',desc:'Show a Word file or PDF from OneDrive, or a Google Doc',w:.55,h:.85,data:()=>({url:''}),build:(w,b,t)=>buildDoc(w,b,t)}
 };
 
@@ -856,6 +867,39 @@ function buildMusic(w,body,tools){
         recent.map(u=>h('button',{class:'chip',type:'button',title:u,onclick:()=>use(u)},label(u)))):null));
     if(editing) setTimeout(()=>fld.focus(),0);
   }
+  draw();
+}
+
+/* ---------- Dice ---------- */
+/* Six-sided dice show dots; other dice show numbers. The roll animation is skipped in calm mode. */
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function buildDice(w,body){
+  const D=w.data;
+  const tray=h('div',{class:'dice-tray'}),total=h('div',{class:'dice-total','aria-live':'polite'});
+  const roll=h('button',{class:'btn primary big',type:'button'},'Roll');
+  const nSel=h('select',{class:'sel','aria-label':'Number of dice'},[1,2,3,4,5,6].map(n=>h('option',{value:n},String(n))));
+  const sSel=h('select',{class:'sel','aria-label':'Sides'},[4,6,8,10,12,20].map(n=>h('option',{value:n},String(n))));
+  nSel.value=D.n;sSel.value=D.sides;
+  nSel.addEventListener('change',()=>{D.n=+nSel.value;D.vals=[];save();draw();});
+  sSel.addEventListener('change',()=>{D.sides=+sSel.value;D.vals=[];save();draw();});
+  body.append(tray,total,h('div',{class:'dice-bar'},roll,h('label',null,'Dice ',nSel),h('label',null,'Sides ',sSel)));
+  const face=v=>{
+    if(D.sides===6&&v){const f=h('div',{class:'die pips','aria-label':String(v)});for(let i=0;i<9;i++)f.append(h('i',{class:PIPS[v].includes(i)?'on':''}));return f;}
+    return h('div',{class:'die num'},v?String(v):'?');
+  };
+  function draw(vals){
+    vals=vals||D.vals;
+    tray.replaceChildren(...Array.from({length:D.n},(_,i)=>face(vals[i])));
+    total.textContent=D.n>1&&vals.length?'Total: '+vals.reduce((a,b)=>a+b,0):'';
+  }
+  const rnd=()=>1+Math.floor(Math.random()*D.sides);
+  roll.addEventListener('click',()=>{
+    const final=Array.from({length:D.n},rnd);
+    const done=()=>{D.vals=final;save();draw();roll.disabled=false;};
+    if(reduce||S.calm){done();return;}
+    roll.disabled=true;let k=0;
+    const iv=setInterval(()=>{draw(Array.from({length:D.n},rnd));if(++k>7){clearInterval(iv);done();}},70);
+  });
   draw();
 }
 
@@ -1682,6 +1726,7 @@ const ICONS={
   agenda:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h3M7 17.5h6"/>',
   music:'<path d="M9 18V5.5l11-2.5v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   slides:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M10 8l4 2-4 2z"/>',
+  dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3"/><circle cx="15.5" cy="15.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'
 };
 function icon(k){
@@ -1690,7 +1735,7 @@ function icon(k){
   return i;
 }
 /* The Add widget menu is a 3 by 3 grid in this order. Hovering a tile shows its description. */
-const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc'];
+const MENU=['agenda','timer','clock','seats','steps','text','image','picker','music','slides','doc','dice'];
 function addPop(anchor){
   openPop(anchor,box=>{
     box.append(h('h3',null,'Add a widget'),h('div',{class:'wgrid'},MENU.filter(k=>TYPES[k]).map(k=>
