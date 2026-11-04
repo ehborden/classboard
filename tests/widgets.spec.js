@@ -131,7 +131,7 @@ test('slides: pasting a link shows the deck, and Change keeps a way back', async
   await expect(page.locator('.slides iframe')).toHaveCount(1);
 });
 
-test('document: Word and PDF links from SharePoint work, and Google links are turned away', async ({ page }) => {
+test('document: Word and PDF links from SharePoint work, and Google links still work without being mentioned', async ({ page }) => {
   await openApp(page);
   const r = await page.evaluate(() => {
     const f = window.classboardTest.officeURL;
@@ -143,7 +143,7 @@ test('document: Word and PDF links from SharePoint work, and Google links are tu
   });
   expect(r[0]).toBe('https://yorkprep-my.sharepoint.com/:w:/g/personal/teacher/EWdoc?e=x1&action=embedview');
   expect(r[1]).toBe('https://yorkprep-my.sharepoint.com/:b:/g/personal/teacher/EBpdf?e=x2&action=embedview');
-  expect(r[2]).toMatch(/^ERROR: That link is not from OneDrive or SharePoint/);
+  expect(r[2]).toBe('https://docs.google.com/document/d/1Doc-id/preview');
 });
 
 test('dice: roll any number of dice, and the total matches', async ({ page }) => {
@@ -207,4 +207,37 @@ test('screen tabs: double-click to rename, x then Delete? to remove, and Undo br
   await expect(page.locator('.tab-x')).toHaveCount(0);
   await page.click('#bUndo');
   await expect(page.locator('.tab:not(.add)')).toHaveText(['Screen 1', 'Lab day']);
+});
+
+test('full size fills the board with one widget, and Esc or Exit full size puts it back', async ({ page }) => {
+  await openApp(page);
+  const t = page.locator('.widget:has(.timer)');
+  const before = await t.boundingBox();
+  await t.locator('[title="Full size"]').click();
+  const boardBox = await page.locator('#board').boundingBox(), full = await t.boundingBox();
+  expect(Math.abs(full.width - boardBox.width)).toBeLessThan(3);
+  expect(Math.abs(full.height - boardBox.height)).toBeLessThan(3);
+  await page.keyboard.press('Escape');
+  expect((await t.boundingBox()).width).toBeCloseTo(before.width, 0);
+  await page.click('#bPresent');
+  await page.locator('.widget:has(.timer)').evaluate(el => el.querySelector('[title="Full size"]').click());
+  await expect(page.locator('.widget.full .full-exit')).toBeVisible();
+  await page.click('.widget.full .full-exit');
+  await expect(page.locator('.widget.full')).toHaveCount(0);
+  await expect(page.locator('body')).toHaveClass(/present/);
+  const saved = (await stored(page)).screens[0].widgets.find(w => w.type === 'timer');
+  expect(saved.w).toBeLessThan(0.5);
+});
+
+test('timer: +1 min adds time to a running timer without stopping it', async ({ page }) => {
+  await openApp(page, board([widget('timer', { dur: 120 })]));
+  const center = page.locator('.timer .dialbox svg text').last();
+  await page.click('.timer .btn.primary');
+  await page.waitForTimeout(1500);
+  await page.click('.timer [aria-label="One minute more"]');
+  await expect(page.locator('.timer .btn.primary')).toHaveText('Pause');
+  await expect(center).toHaveText(/^2:5\d$/);
+  await page.click('.timer [aria-label="One minute less"]');
+  await expect(center).toHaveText(/^1:5\d$/);
+  await expect(page.locator('.timer .btn.primary')).toHaveText('Pause');
 });

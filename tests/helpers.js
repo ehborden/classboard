@@ -35,15 +35,14 @@ async function serveLibs(context) {
   });
 }
 
-// Opens the app, optionally seeded with saved state (only on the first load, so reloads keep later changes).
+// Opens the app, optionally seeded with saved state. The seed is written only when nothing is saved yet,
+// so a reload keeps the app's later changes. (A sessionStorage flag was used before; under heavy load it
+// was occasionally missing on reload, and the seed overwrote kept work.)
 async function openApp(page, state) {
   await serveLibs(page.context());
   if (state) {
     await page.addInitScript(([key, s]) => {
-      if (!sessionStorage.getItem('seeded')) {
-        sessionStorage.setItem('seeded', '1');
-        localStorage.setItem(key, JSON.stringify(s));
-      }
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(s));
     }, [KEY, state]);
   }
   const errors = [];

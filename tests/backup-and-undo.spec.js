@@ -65,8 +65,7 @@ test('Undo restores a deleted class', async ({ page }) => {
 
 test('a backup reminder appears after a week with no backup', async ({ page }) => {
   await page.addInitScript(() => {
-    if (sessionStorage.getItem('seeded')) return;
-    sessionStorage.setItem('seeded', '1');
+    if (localStorage.getItem('classboard.v1')) return;
     localStorage.setItem('classboard.v1', JSON.stringify({ v: 1, since: Date.now() - 10 * 864e5, classes: [], screens: [{ id: 's', name: 'Screen 1', bg: 'mist', widgets: [] }], active: 's' }));
   });
   await openApp(page);

@@ -35,12 +35,12 @@ To move to a new computer: Download backup on the old one, then Import backup on
 
 ## Features
 
-- **Screens and widgets.** Click a screen's tab to switch to it, double-click the name to rename it, and use its × to delete it (click again to confirm). Drag a widget by its title bar, resize from its corner, minimize it to just its title bar. New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
+- **Screens and widgets.** Click a screen's tab to switch to it, double-click the name to rename it, and use its × to delete it (click again to confirm). Drag a widget by its title bar, resize from its corner, minimize it to just its title bar, or click ⤢ to make it fill the board for now (Esc or **Exit full size** puts it back). New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
 - **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. **+** asks whether to start from the default layout, a blank screen, or one of your templates, and can save the current screen as a template. Rename or delete templates from the gear menu.
 - **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Pen, Calm, and Exit.
 - **Pen.** Draw anywhere on the board, over any widget, with a pen, highlighter, or eraser. It is scratch paper: nothing is saved, and marks clear with Clear, a screen switch, or a reload. A stylus draws with pressure.
 - **Agenda.** No times. The first unchecked item is the current one: bold and teal, with everything else in gray. Drag the handle to reorder. In Present mode it shows the current item and the next two.
-- **Timer.** A dial that empties as time runs out. Silent unless you turn on **Bell**. Presets of 1, 3, 5, and 10 minutes, or type a time like `7` or `2:30`.
+- **Timer.** A dial that empties as time runs out. Silent unless you turn on **Bell**. **−1 min** and **+1 min** sit right under the dial and change the time left without stopping a running timer. Presets of 1, 3, 5, and 10 minutes, or type a time like `7` or `2:30`.
 - **Float clock.** A small always-on-top window with the clock and timer, so they stay visible over PowerPoint. Flip between the full timer and a small clock. Works in Chrome and Edge, not Safari.
 - **Task steps.** Up to five steps. The current step is bold and teal.
 - **Seating chart.** Step 1, set up the room: start from rows of desks or table groups, then move pieces to match. Step 2, seat students by dragging names or clicking a name and then a chair. Each class keeps its own seats in the same room.
