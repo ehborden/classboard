@@ -241,3 +241,17 @@ test('timer: +1 min adds time to a running timer without stopping it', async ({ 
   await expect(center).toHaveText(/^1:5\d$/);
   await expect(page.locator('.timer .btn.primary')).toHaveText('Pause');
 });
+
+test('image: the header title can be renamed, saved, and survives a reload', async ({ page }) => {
+  await openApp(page, board([widget('image', { src: null, fit: 'contain' })]));
+  const t = page.locator('.wtitle');
+  await expect(t).toHaveValue('');
+  await expect(t).toHaveAttribute('placeholder', 'Image');
+  await t.fill('Water cycle');
+  await t.press('Enter');
+  expect((await stored(page)).screens[0].widgets[0].data.title).toBe('Water cycle');
+  await page.reload();
+  await expect(page.locator('.wtitle')).toHaveValue('Water cycle');
+  await page.locator('.wtitle').dblclick();
+  await expect(page.locator('.widget.min')).toHaveCount(0);
+});

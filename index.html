@@ -118,6 +118,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .whead{display:flex;align-items:center;gap:6px;padding:3px 5px 3px 11px;background:var(--panel2);border-bottom:1px solid var(--line);cursor:grab;user-select:none;touch-action:none;color:var(--muted)}
 .whead:active{cursor:grabbing}
 .wlabel{font:600 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.wtitle{flex:1;width:100%;border:1px solid transparent;background:transparent;color:inherit;border-radius:6px;padding:2px 4px;margin-left:-4px;user-select:text;cursor:text}
+.wtitle:hover,.wtitle:focus{background:var(--panel);border-color:var(--line)}
+.wtitle::placeholder{color:inherit;opacity:1}
 .wtools{margin-left:auto;display:flex;gap:2px;flex:none}
 .tb{height:24px;min-width:24px;padding:0 7px;border:1px solid transparent;background:transparent;color:var(--muted);font:600 12px var(--font-body);border-radius:6px;cursor:pointer}
 .tb:hover{background:var(--line);color:var(--ink)}
@@ -495,7 +498,7 @@ const TYPES={
   seats:{label:'Seating chart',desc:'Tables and chairs with names or initials',w:.96,h:.94,data:()=>({classId:S.classes[0]?S.classes[0].id:null,items:[],seats:{},initials:false}),build:buildSeats},
   picker:{label:'Names and groups',desc:'Pick a name, make partners or groups',w:.44,h:.44,data:()=>({classId:S.classes[0]?S.classes[0].id:null,mode:'one',size:3,used:[],result:null}),build:buildPicker},
   text:{label:'Text box',desc:'Instructions, questions, notes',w:.40,h:.36,data:()=>({html:'',fs:28}),build:buildText},
-  image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain'}),build:buildImage},
+  image:{label:'Image',desc:'Upload, drop, or paste a picture',w:.30,h:.40,data:()=>({src:null,fit:'contain',title:''}),build:buildImage},
   agenda:{label:'Agenda',desc:'Today\'s plan; the first unchecked item is current',w:.22,h:.56,data:()=>({title:'Today',items:[]}),build:buildAgenda},
   music:{label:'Music',desc:'Play a Spotify or YouTube link',w:.30,h:.40,data:()=>({url:''}),build:buildMusic},
   slides:{label:'Slides',desc:'Show a PowerPoint from OneDrive',w:.63,h:.80,data:()=>({url:''}),build:(w,b,t)=>buildSlides(w,b,t)},
@@ -739,7 +742,7 @@ function renderWidget(w){
     minB.textContent=w.min?'\u25A1':'\u2212';
     minB.title=w.min?'Restore this widget':'Minimize this widget';minB.setAttribute('aria-label',minB.title);
   }
-  head.addEventListener('dblclick',e=>{if(!e.target.closest('button'))toggleMin();});
+  head.addEventListener('dblclick',e=>{if(!e.target.closest('button,input'))toggleMin();});
   /* Full size fills the board with this widget for now, without changing its saved size or place. */
   const fullB=tbtn('\u2922','Full size',()=>setFull(fullId===w.id?null:w.id));
   fullB.classList.add('fullb');
@@ -966,6 +969,15 @@ function shrink(f){
 }
 function buildImage(w,body,tools,el){
   body.classList.add('flush');
+  /* The title in the header becomes a box the teacher can type a label into. */
+  const lab=el.querySelector('.wlabel');
+  if(lab){
+    const ttl=h('input',{class:'wlabel wtitle',value:w.data.title||'',placeholder:'Image',maxlength:60,'aria-label':'Picture label',title:'Click to rename'});
+    ttl.addEventListener('input',()=>{w.data.title=ttl.value;save();});
+    ttl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='Escape')ttl.blur();});
+    ttl.value=w.data.title||'';
+    lab.replaceWith(ttl);
+  }
   const file=h('input',{type:'file',accept:'image/*',hidden:true,'aria-label':'Choose an image'});
   const take=f=>{
     if(!f||!f.type.startsWith('image/')){toast('That file is not an image.');return;}
