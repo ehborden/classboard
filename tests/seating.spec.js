@@ -52,3 +52,15 @@ test('seat by clicking, swap by dragging, and seats are kept per class', async (
   const seats = (await stored(page)).screens[0].widgets[0].data.seats;
   expect(Object.values(seats.c1).sort()).toEqual(['Leo C', 'Maya R']);
 });
+
+test('a class can be added from the seating chart', async ({ page }) => {
+  await openApp(page, seatBoard());
+  await page.click('text=Make rows');
+  await page.click('text=2. Seat students');
+  const before = (await stored(page)).classes.length;
+  await page.click('.seat-bar >> text=+ Add a class');
+  await expect(page.locator('#clName')).toBeFocused();
+  await page.fill('#clName', 'Period 9');
+  await page.click('.modal >> text=Done');
+  expect((await stored(page)).classes.length).toBe(before + 1);
+});

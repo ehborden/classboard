@@ -1736,7 +1736,8 @@ function buildSeats(w,body,tools,wel){
       armed(clearB,'Clear seats',()=>{if(cls)D.seats[cls.id]={};pick=null;save();draw();},'Unseat everyone?');
       bar.replaceChildren(
         ...(S.classes.length?[clsSel]:[]),
-        h('button',{class:'btn',type:'button',onclick:()=>openClasses(cls&&cls.id)},cls?'Edit class':'Add a class'),
+        ...(cls?[h('button',{class:'btn',type:'button',onclick:()=>openClasses(cls.id)},'Edit class')]:[]),
+        h('button',{class:'btn',type:'button',onclick:()=>openClasses(cls&&cls.id,true)},'+ Add a class'),
         h('button',{class:'btn'+(D.initials?' on':''),type:'button','aria-pressed':String(!!D.initials),onclick:()=>{D.initials=!D.initials;save();draw();}},D.initials?'Show names':'Show initials'),
         clearB);
       hint.textContent=!chairs.length?'':!cls?'Add a class first, then seat students.':pick?'Now click a chair for '+pick.name+'.':'Drag a name onto a chair, or click a name, then a chair. Drag a name back down here to unseat it.';
@@ -2023,7 +2024,7 @@ window.classboardTest={nameFromLine,namesFromRows,namesFromText,parseCSV,formatN
 
 /* ---------- Classes dialog ---------- */
 function classesChanged(){save();classHooks.forEach(f=>{try{f();}catch(e){}});}
-function openClasses(focusId){
+function openClasses(focusId,startNew){
   closePop();
   const back=h('div',{class:'modal-back'});
   const box=h('div',{class:'modal',role:'dialog','aria-modal':'true','aria-label':'Classes'});
@@ -2145,7 +2146,8 @@ function openClasses(focusId){
       h('div',{class:'cl-grid'},list,editor));
   }
   render();
-  setTimeout(()=>{const t=$('#clOne',box)||$('.btn.primary.big',box)||$('.btn',box);if(t&&t.focus)t.focus();},0);
+  if(startNew)addClass();
+  if(!startNew)setTimeout(()=>{const t=$('#clOne',box)||$('.btn.primary.big',box)||$('.btn',box);if(t&&t.focus)t.focus();},0);
 }
 
 /* ---------- Popovers ---------- */
