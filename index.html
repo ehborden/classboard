@@ -15,30 +15,30 @@
 :root{
   --font-display:'Source Sans 3','Segoe UI',system-ui,sans-serif;
   --font-body:var(--font-display);
-  --bg:#f3faf9; --bar:#ffffff; --ink:#111f21; --muted:#334649;
-  --panel:#ffffff; --panel2:#e6f3f2; --line:#6f9092;
-  --accent:#07524e; --accent-ink:#ffffff; --accent-soft:#d3eeeb;
-  --sun:#ffc93c; --on-sun:#2b1d00; --danger:#15202b; --on-danger:#ffffff;
-  --mist:#e0f1ef;
-  --shadow:0 1px 3px rgba(10,35,35,.14),0 10px 26px rgba(10,35,35,.14);
+  --bg:#f5f8fc; --bar:#ffffff; --ink:#1a2230; --muted:#2e3b4e;
+  --panel:#ffffff; --panel2:#e9f0f9; --line:#6a82a2;
+  --accent:#1b4489; --accent-ink:#ffffff; --accent-soft:#e2ecf9;
+  --sun:#f0c85e; --on-sun:#2b1d00; --danger:#15202b; --on-danger:#ffffff;
+  --mist:#e6eef8;
+  --shadow:0 1px 3px rgba(15,25,45,.14),0 10px 26px rgba(15,25,45,.14);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0d1718; --bar:#132122; --ink:#e8f1f1; --muted:#b7cccd;
-    --panel:#192829; --panel2:#17383a; --line:#5b8183;
-    --accent:#7ae8df; --accent-ink:#052321; --accent-soft:#1a4a47;
-    --sun:#ffcf4d; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
-    --mist:#0a1213;
+    --bg:#111926; --bar:#162033; --ink:#e9eef6; --muted:#b9c6d8;
+    --panel:#1a2433; --panel2:#1c2f52; --line:#6584ab;
+    --accent:#98bcf0; --accent-ink:#071426; --accent-soft:#243f6b;
+    --sun:#f2cd62; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
+    --mist:#0d1420;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0d1718; --bar:#132122; --ink:#e8f1f1; --muted:#b7cccd;
-  --panel:#192829; --panel2:#17383a; --line:#5b8183;
-  --accent:#7ae8df; --accent-ink:#052321; --accent-soft:#1a4a47;
-  --sun:#ffcf4d; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
-  --mist:#0a1213;
+  --bg:#111926; --bar:#162033; --ink:#e9eef6; --muted:#b9c6d8;
+  --panel:#1a2433; --panel2:#1c2f52; --line:#6584ab;
+  --accent:#98bcf0; --accent-ink:#071426; --accent-soft:#243f6b;
+  --sun:#f2cd62; --on-sun:#2b1d00; --danger:#e8eef4; --on-danger:#0f151b;
+  --mist:#0d1420;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
   color-scheme:dark;
 }
@@ -240,7 +240,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-title:hover,.ag-title:focus{background:var(--panel2)}
 .ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:max(var(--min-text,0px),clamp(13px,4.4cqw,22px))}
 .ag-row{display:grid;grid-template-columns:14px 24px minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
-/* One static accent: the current row is bold and teal. Every other row is normal weight and gray (still 7:1). */
+/* One static accent: the current row is bold and accent-colored. Every other row is normal weight and gray (still 7:1). */
 .ag-row .ag-txt{color:var(--muted)}
 .ag-row.now .ag-txt{font-weight:700;color:var(--accent)}
 .ag-grip{cursor:grab;color:var(--muted);text-align:center;user-select:none;touch-action:none;font-size:16px;line-height:1}
@@ -2517,7 +2517,7 @@ function templatesPop(anchor){
 /* Scratch drawing over the whole board. Nothing is saved: marks clear with Clear, a screen switch,
    or a reload. Points are stored as fractions of the board so marks stay in place when it resizes.
    A stylus that reports pressure draws thinner and thicker lines. No red, per the design rules. */
-const PEN_COLORS=[['ink','var(--ink)'],['teal','var(--accent)'],['blue','#1f5fbf']];
+const PEN_COLORS=[['ink','var(--ink)'],['teal','#0f6e68'],['blue','#1f5fbf']];
 const pen={on:false,tool:'pen',color:'ink',size:'thin',strokes:[],canvas:null,bar:null};
 function penColor(k){
   if(k==='hl')return '#f2c200';
