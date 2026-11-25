@@ -351,6 +351,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .present .ag-row{grid-template-columns:24px minmax(0,1fr)}
 .present .st-txt{pointer-events:none}
 
+.pop-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;padding:6px 0;cursor:pointer;font:600 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.pop-toggle:hover{color:var(--ink)}
+.pop-toggle .chev{width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.pop-toggle[aria-expanded="true"] .chev{transform:translateY(2px) rotate(-135deg)}
+.starters{border-top:1px solid var(--edge);margin-top:2px}
+.starter-list{display:flex;flex-direction:column;gap:2px}
+.starter-list[hidden]{display:none}
 .pop-note{margin:0 0 8px;color:var(--muted);font-size:13px}
 .look-row{display:flex;flex-wrap:wrap;gap:6px}
 .look-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;font-weight:500}
@@ -2470,47 +2477,36 @@ async function floatClock(){
    Widget ids are renewed on each use; ids inside a widget (agenda rows, chairs) stay, since
    they only need to be unique within that widget and seat assignments point at chair ids. */
 function cloneWidgets(ws){return JSON.parse(JSON.stringify(ws)).map(x=>{x.id=uid();return x;});}
-/* Built-in starter screens for high school classes. They are made fresh each time the menu opens, so
-   agenda rows and steps get their own ids. Teachers edit the words; nothing here is saved until they use one. */
+/* Built-in starter screens. They are made fresh each time the menu opens, so agenda rows and steps get
+   their own ids. Teachers edit the words; nothing here is saved until they use one. */
 function starterTemplates(){
   const rows=(...t)=>t.map(txt=>({id:uid(),txt,done:false}));
   const W=(type,x,y,w,hh,over)=>({id:uid(),type,x,y,w,h:hh,z:1,data:Object.assign(TYPES[type].data(),over||{})});
   const set=ws=>ws.map((w,i)=>{w.z=i+1;return w;});
   return [
-    {name:'Math class',desc:'Agenda, problem of the day, timer, clock',widgets:set([
-      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Warm up','Notes and examples','Practice problems','Exit ticket')}),
-      W('text',.255,.02,.47,.95,{html:'<b>Problem of the day</b><br>Write the problem here.',fs:44}),
-      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
-    {name:'English class',desc:'Agenda, prompt, names, timer',widgets:set([
-      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Silent reading','Mini lesson','Discussion','Writing','Share out')}),
-      W('text',.255,.02,.47,.6,{html:'<b>Prompt</b><br>Write today\'s question or quote here.',fs:40}),
-      W('picker',.255,.64,.47,.33),
-      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
-    {name:'Science lab',desc:'Question, lab steps, timer, clock',widgets:set([
-      W('text',.02,.02,.5,.24,{html:'<b>Today\'s question</b><br>Write the question for the lab here.',fs:34}),
-      W('steps',.02,.29,.5,.68,{title:'Lab steps',items:rows('Safety check','Set up','Run the procedure','Record data','Clean up')}),
-      W('timer',.55,.02,.43,.58,{dur:900}),W('clock',.55,.64,.43,.33)])},
-    {name:'Social studies',desc:'Agenda, essential question, key terms',widgets:set([
-      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Hook','Notes','Source analysis','Discussion','Exit ticket')}),
-      W('text',.255,.02,.47,.5,{html:'<b>Essential question</b><br>Write the question here.',fs:40}),
-      W('text',.255,.56,.47,.41,{html:'<b>Key terms</b><br>',fs:30}),
-      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
-    {name:'Group work',desc:'Task, groups, group steps, timer',widgets:set([
-      W('text',.02,.02,.6,.22,{html:'<b>Task</b><br>Write the group task here.',fs:32}),
-      W('picker',.02,.27,.6,.7,{mode:'groups',size:4}),
-      W('timer',.65,.02,.33,.44,{dur:900}),
-      W('steps',.65,.5,.33,.47,{title:'Group steps',items:rows('Read the task','Choose roles','Work together','Share out')})])},
-    {name:'Test or quiz day',desc:'Rules, finish checklist, long timer',widgets:set([
+    {name:'Slides',desc:'Slides, clock, timer',widgets:set([
+      W('slides',.02,.02,.68,.96),
+      W('clock',.72,.03,.26,.27),W('timer',.72,.34,.26,.63,{dur:600})])},
+    {name:'Warm up',desc:'Warm up text box, agenda, clock, timer',widgets:set([
+      W('text',.02,.02,.49,.95,{html:'<b>Warm up</b><br>Write the warm up here.',fs:44}),
+      W('agenda',.53,.02,.21,.95,{title:'Today',items:rows('Warm up','Lesson','Practice','Wrap up')}),
+      W('clock',.77,.03,.21,.27),W('timer',.755,.34,.235,.63,{dur:300})])},
+    {name:'Seats and warm up',desc:'Seating chart, warm up, timer, clock',widgets:set([
+      W('seats',.02,.02,.55,.96),
+      W('text',.59,.02,.39,.25,{html:'<b>Warm up</b><br>Write the warm up here.',fs:30}),
+      W('timer',.59,.3,.39,.5,{dur:300}),W('clock',.59,.83,.39,.15)])},
+    {name:'Work time',desc:'Big timer, directions, agenda, clock',widgets:set([
+      W('text',.02,.02,.36,.5,{html:'<b>Directions</b><br>Write what to do during work time.',fs:30}),
+      W('agenda',.02,.56,.36,.41,{title:'Work time',items:rows('Read the directions','Work on your own','Check your work')}),
+      W('timer',.4,.02,.58,.72,{dur:1200}),W('clock',.4,.78,.58,.19)])},
+    {name:'Test or quiz day',desc:'Rules, finish checklist, long timer, clock',widgets:set([
       W('text',.02,.02,.55,.45,{html:'<b>Test day</b><br>Phones away.<br>Eyes on your own work.<br>Raise your hand if you have a question.',fs:36}),
       W('steps',.02,.5,.55,.47,{title:'Before you turn it in',items:rows('Name on every page','Answer every question','Check your work','Raise your hand when done')}),
       W('timer',.6,.02,.38,.6,{dur:2400}),W('clock',.6,.66,.38,.31)])},
-    {name:'Study hall or advisory',desc:'Big clock, plan for the period, timer',widgets:set([
-      W('clock',.02,.02,.4,.4),
-      W('text',.02,.46,.4,.51,{html:'<b>Today</b><br>Write announcements or goals here.',fs:30}),
-      W('agenda',.45,.02,.53,.45,{title:'This period',items:rows('Check in','Work time','Wrap up')}),
-      W('timer',.45,.5,.53,.47,{dur:1800})])},
-    {name:'Seating chart',desc:'A full-screen room with your class',widgets:set([
-      W('seats',.02,.02,.96,.96)])}
+    {name:'Groups',desc:'Prompt, groups, timer, clock',widgets:set([
+      W('text',.02,.02,.6,.22,{html:'<b>Task</b><br>Write the group task here.',fs:32}),
+      W('picker',.02,.27,.6,.7,{mode:'groups',size:4}),
+      W('timer',.65,.02,.33,.6,{dur:900}),W('clock',.65,.66,.33,.31)])}
   ];
 }
 /* from is a template, 'blank', or nothing for the default layout. */
@@ -2522,14 +2518,23 @@ function newScreen(from){
 }
 function newScreenPop(anchor){
   openPop(anchor,box=>{
+    /* The starters sit in a dropdown that starts closed, so the menu stays short. */
+    const items=starterTemplates();
+    const list=h('div',{class:'starter-list',hidden:true},items.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.desc))));
+    const head=h('button',{class:'pop-toggle',type:'button','aria-expanded':'false'},'Starter screens ('+items.length+')',h('span',{class:'chev','aria-hidden':'true'}));
+    head.addEventListener('click',()=>{
+      const open=list.hidden;list.hidden=!open;head.setAttribute('aria-expanded',String(open));
+      const ph=box.offsetHeight,top=parseFloat(box.style.top)||0;
+      if(top+ph>window.innerHeight-8)box.style.top=Math.max(8,window.innerHeight-8-ph)+'px';
+    });
+    const starters=h('div',{class:'starters'},head,list);
     box.append(h('h3',null,'New screen'),
       h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen();}},'Default layout',h('small',null,'Agenda, text box, clock, and timer')),
       h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen('blank');}},'Blank',h('small',null,'An empty screen')),
       h('h3',null,'Your templates'),
       ...(S.templates.length?S.templates.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.widgets.length+(t.widgets.length===1?' widget':' widgets')))):
         [h('p',null,'None yet. Set up a screen the way you like it, then save it here.')]),
-      h('h3',null,'High school starters'),
-      ...starterTemplates().map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.desc))),
+      starters,
       h('button',{class:'btn',type:'button',onclick:()=>saveTemplatePop(anchor,cur())},'Save this screen as a template'));
   });
 }

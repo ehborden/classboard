@@ -21,7 +21,7 @@ test('save a screen as a template, then start a new screen from it with its cont
 
   await page.click('.tab.add');
   await expect(page.locator('.pop')).toContainText('Your templates');
-  await page.click('.pop .opt >> text=Warm up');
+  await page.locator('.pop .opt >> text=Warm up').first().click();
   await expect(page.locator('.tab.on')).toHaveText('Warm up');
   await expect(page.locator('.ag-txt')).toHaveValue('Warm up');
   await expect(page.locator('.timer .dialbox svg text').last()).toHaveText('7:00');
@@ -55,18 +55,21 @@ test('duplicating a screen keeps seating chart assignments', async ({ page }) =>
   await expect(page.locator('.seat-chair .seat-name')).toHaveText('Maya R');
 });
 
-test('high school starters: each one makes a working screen, and there is no separate background setting', async ({ page }) => {
+test('starter screens: each one makes a working screen, and there is no separate background setting', async ({ page }) => {
   await openApp(page);
   await page.click('.tab.add');
-  await expect(page.locator('.pop')).toContainText('High school starters');
-  const names = ['Math class', 'English class', 'Science lab', 'Social studies', 'Group work', 'Test or quiz day', 'Study hall or advisory', 'Seating chart'];
+  await expect(page.locator('.pop')).toContainText('Starter screens');
+  await expect(page.locator('.starter-list')).toBeHidden();
+  await page.click('.pop-toggle');
+  await expect(page.locator('.pop-toggle')).toHaveAttribute('aria-expanded', 'true');
+  const names = ['Slides', 'Warm up', 'Seats and warm up', 'Work time', 'Test or quiz day', 'Groups'];
   for (const n of names) await expect(page.locator('.pop .opt', { hasText: n }).first()).toBeVisible();
-  await page.click('.pop .opt >> text=Science lab');
-  await expect(page.locator('.tab.on')).toHaveText('Science lab');
+  await page.click('.pop .opt >> text=Test or quiz day');
+  await expect(page.locator('.tab.on')).toHaveText('Test or quiz day');
   expect((await page.locator('.widget .wlabel').allTextContents()).sort()).toEqual(['Clock', 'Task steps', 'Text box', 'Timer']);
-  await expect(page.locator('.st-txt').first()).toHaveValue('Safety check');
+  await expect(page.locator('.st-txt').first()).toHaveValue('Name on every page');
   // Starting a second screen from the same starter gives every widget its own id.
-  await page.click('.tab.add'); await page.click('.pop .opt >> text=Science lab');
+  await page.click('.tab.add'); await page.click('.pop-toggle'); await page.click('.pop .opt >> text=Test or quiz day');
   const s = await stored(page);
   const ids = s.screens.flatMap(sc => sc.widgets.map(w => w.id));
   expect(new Set(ids).size).toBe(ids.length);
@@ -77,9 +80,10 @@ test('high school starters: each one makes a working screen, and there is no sep
 
 test('every starter fits on screen without widgets overlapping', async ({ page }) => {
   await openApp(page);
-  const names = ['Math class', 'English class', 'Science lab', 'Social studies', 'Group work', 'Test or quiz day', 'Study hall or advisory', 'Seating chart'];
+  const names = ['Slides', 'Warm up', 'Seats and warm up', 'Work time', 'Test or quiz day', 'Groups'];
   for (const n of names) {
     await page.click('.tab.add');
+    await page.click('.pop-toggle');
     await page.click('.pop .opt >> text=' + n);
     const boxes = await page.$$eval('.widget', ws => ws.map(w => { const r = w.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }));
     const board = await page.$eval('#board', b => { const r = b.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });

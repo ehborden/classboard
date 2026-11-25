@@ -36,7 +36,7 @@ To move to a new computer: Download backup on the old one, then Import backup on
 ## Features
 
 - **Screens and widgets.** Click a screen's tab to switch to it, double-click the name to rename it, and use its × to delete it (click again to confirm). Drag a widget by its title bar, resize from its corner, minimize it to just its title bar, or click ⤢ to make it fill the board for now (Esc or **Exit full size** puts it back). New screens start with an agenda, a text box, a clock, and a timer. Screen settings has **Use default layout** to rearrange an older screen.
-- **High school starters.** **+** also offers ready-made screens: Math class, English class, Science lab, Social studies, Group work, Test or quiz day, Study hall or advisory, and a Seating chart. Change the words to fit your class. Nothing is saved until you use one.
+- **Starter screens.** **+** also offers ready-made screens: Slides, Warm up, Seats and warm up, Work time, Test or quiz day, and Groups. Change the words to fit your class. Nothing is saved until you use one.
 - **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. **+** asks whether to start from the default layout, a blank screen, or one of your templates, and can save the current screen as a template. Rename or delete templates from the gear menu.
 - **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Pen, Calm, and Exit.
 - **Pen.** Draw anywhere on the board, over any widget, with a pen, highlighter, or eraser. It is scratch paper: nothing is saved, and marks clear with Clear, a screen switch, or a reload. A stylus draws with pressure.
