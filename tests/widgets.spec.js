@@ -255,3 +255,17 @@ test('image: the header title can be renamed, saved, and survives a reload', asy
   await page.locator('.wtitle').dblclick();
   await expect(page.locator('.widget.min')).toHaveCount(0);
 });
+
+test('look: the color look can be changed, is saved, and survives a reload', async ({ page }) => {
+  await openApp(page, agendaBoard());
+  await expect(page.locator('html')).toHaveAttribute('data-look', 'navy');
+  await page.click('#bGear');
+  await page.click('.pop .opt >> text=Look');
+  await page.click('.pop .opt.look >> text=Forest and gold');
+  await expect(page.locator('html')).toHaveAttribute('data-look', 'forest');
+  await expect(page.locator('.pop .opt.look.on')).toContainText('Selected');
+  await settle(page);
+  expect((await stored(page)).look).toBe('forest');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-look', 'forest');
+});
