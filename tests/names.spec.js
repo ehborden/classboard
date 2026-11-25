@@ -1,6 +1,6 @@
 // Unit checks for the name reader, through the read-only window.classboardTest hook.
 const { test, expect } = require('@playwright/test');
-const { openApp } = require('./helpers');
+const { openApp, stored, board, widget } = require('./helpers');
 
 test('reads names from messy text', async ({ page }) => {
   await openApp(page);
@@ -33,4 +33,14 @@ test('formats names three ways, adding an initial when first names repeat', asyn
   const r = await page.evaluate(() => ['full', 'initial', 'first'].map(k =>
     window.classboardTest.formatNames([{ first: 'Sam', last: 'Lee' }, { first: 'Sam', last: 'Ortiz' }, { first: 'Ava', last: 'Park' }], k).join(', ')));
   expect(r).toEqual(['Sam Lee, Sam Ortiz, Ava Park', 'Sam L, Sam O, Ava P', 'Sam L, Sam O, Ava']);
+});
+
+test('a class can be added from the names and groups widget', async ({ page }) => {
+  await openApp(page, board([widget('picker', { classId: 'c1', mode: 'one', size: 3, used: [], result: null })]));
+  const before = (await stored(page)).classes.length;
+  await page.click('.pk-top >> text=+ Add a class');
+  await expect(page.locator('#clName')).toBeFocused();
+  await page.fill('#clName', 'Period 8');
+  await page.click('.modal >> text=Done');
+  expect((await stored(page)).classes.length).toBe(before + 1);
 });

@@ -43,3 +43,16 @@ test('pen marks clear on a screen switch and are never saved', async ({ page }) 
   await addScreen(page);
   expect(await inked(page)).toBe(0);
 });
+
+test('highlighter has its own colors, and the ink colors come back for the pen', async ({ page }) => {
+  await openApp(page);
+  await page.click('#bPen');
+  await expect(page.locator('.pen-bar [aria-label="blue ink"]')).toBeVisible();
+  await page.click('.pen-bar >> text=Highlighter');
+  await expect(page.locator('.pen-bar [aria-label="blue ink"]')).toHaveCount(0);
+  await expect(page.locator('.pen-bar [aria-label$="highlighter"]')).toHaveCount(5);
+  await page.click('.pen-bar [aria-label="Green highlighter"]');
+  await expect(page.locator('.pen-bar [aria-label="Green highlighter"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.click('.pen-bar >> text=Pen');
+  await expect(page.locator('.pen-bar [aria-label="blue ink"]')).toBeVisible();
+});

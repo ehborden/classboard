@@ -1370,7 +1370,7 @@ function pdfView(w,body){
   let mem=PDFMEM[w.id];
   if(!mem)mem=PDFMEM[w.id]={blob:null,name:kept.name,marks:JSON.parse(JSON.stringify(kept.marks||{})),dirty:false,kept:true};
   mem.page=mem.page||1;
-  let doc=null,drawing=false,tool='pen',color='ink',busy=0;
+  let doc=null,drawing=false,tool='pen',color='ink',hlc='hl',busy=0;
   const page=h('canvas',{class:'pdf-page'}),ink=h('canvas',{class:'pdf-ink'});
   const stage=h('div',{class:'pdf-stage'},page,ink);
   const label=h('span',{class:'pdf-label'},'Loading...');
@@ -1391,7 +1391,8 @@ function pdfView(w,body){
     ink.classList.toggle('drawing',drawing);
     const t=(k,l)=>h('button',{class:'chip'+(tool===k?' on':''),type:'button','aria-pressed':String(tool===k),onclick:()=>{tool=k;syncTools();}},l);
     tools2.replaceChildren(...(drawing?[t('pen','Pen'),t('hl','Highlighter'),t('eraser','Eraser'),
-      ...PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(color===k?' on':''),type:'button','aria-label':k+' ink','aria-pressed':String(color===k),onclick:()=>{color=k;tool='pen';syncTools();}});b.style.background=penColor(k);return b;}),
+      ...(tool==='hl'?HL_COLORS.map(([k,name])=>{const b=h('button',{class:'sw pen-sw'+(hlc===k?' on':''),type:'button',title:name+' highlighter','aria-label':name+' highlighter','aria-pressed':String(hlc===k),onclick:()=>{hlc=k;syncTools();}});b.style.background=penColor(k);return b;}):
+        tool==='eraser'?[]:PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(color===k?' on':''),type:'button','aria-label':k+' ink','aria-pressed':String(color===k),onclick:()=>{color=k;tool='pen';syncTools();}});b.style.background=penColor(k);return b;})),
       h('button',{class:'chip',type:'button',onclick:()=>{marks().pop();mem.dirty=true;paintInk();syncKeep();}},'Undo'),
       h('button',{class:'chip',type:'button',onclick:()=>{mem.marks[mem.page]=[];mem.dirty=true;paintInk();syncKeep();}},'Clear page')]:[]));
   }
@@ -1425,7 +1426,7 @@ function pdfView(w,body){
   ink.addEventListener('pointerdown',e=>{
     if(!drawing||e.button>0)return;
     e.preventDefault();e.stopPropagation();ink.setPointerCapture(e.pointerId);
-    cur={tool,color:tool==='hl'?'hl':color,size:'thin',stylus:e.pointerType==='pen',pts:[pos(e)]};
+    cur={tool,color:tool==='hl'?hlc:color,size:'thin',stylus:e.pointerType==='pen',pts:[pos(e)]};
     marks().push(cur);mem.dirty=true;paintInk();syncKeep();
   });
   ink.addEventListener('pointermove',e=>{if(!cur)return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>cur.pts.push(pos(ev)));paintInk();});
@@ -1797,7 +1798,8 @@ function buildPicker(w,body,tools,el){
   const here=h('button',{class:'btn',type:'button'},'Who is here');
   const panel=h('div',{class:'pk-here',hidden:true});
   const editB=h('button',{class:'btn',type:'button',onclick:()=>{const c=getClass();openClasses(c&&c.id);}},'Edit class');
-  body.append(h('div',{class:'pk-top'},sel,editB,seg,sizeBox),out,h('div',{class:'pk-bot'},go,info,here),panel);
+  const addB=h('button',{class:'btn',type:'button',onclick:()=>{const c=getClass();openClasses(c&&c.id,true);}},'+ Add a class');
+  body.append(h('div',{class:'pk-top'},sel,editB,addB,seg,sizeBox),out,h('div',{class:'pk-bot'},go,info,here),panel);
 
   function pickOne(){
     const pool=present();if(!pool.length)return;
@@ -2580,9 +2582,11 @@ function templatesPop(anchor){
    or a reload. Points are stored as fractions of the board so marks stay in place when it resizes.
    A stylus that reports pressure draws thinner and thicker lines. No red, per the design rules. */
 const PEN_COLORS=[['ink','var(--ink)'],['teal','#0f6e68'],['blue','#1f5fbf']];
-const pen={on:false,tool:'pen',color:'ink',size:'thin',strokes:[],canvas:null,bar:null};
+/* Highlighter colors. 'hl' stays yellow, so marks saved in a PDF before this keep their color. No red. */
+const HL_COLORS=[['hl','Yellow','#f2c200'],['hl-green','Green','#2fcf6f'],['hl-blue','Blue','#3fa9ff'],['hl-orange','Orange','#ff9a1f'],['hl-pink','Pink','#ff7ac8']];
+const pen={on:false,tool:'pen',color:'ink',hl:'hl',size:'thin',strokes:[],canvas:null,bar:null};
 function penColor(k){
-  if(k==='hl')return '#f2c200';
+  const hl=HL_COLORS.find(c=>c[0]===k);if(hl)return hl[2];
   const v=(PEN_COLORS.find(c=>c[0]===k)||PEN_COLORS[0])[1];
   return v.startsWith('var(')?getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim():v;
 }
@@ -2595,7 +2599,7 @@ function penSetup(){
   c.addEventListener('pointerdown',e=>{
     if(!pen.on||e.button>0)return;
     e.preventDefault();c.setPointerCapture(e.pointerId);
-    cur={tool:pen.tool,color:pen.tool==='hl'?'hl':pen.color,size:pen.size,stylus:e.pointerType==='pen',pts:[pos(e)]};
+    cur={tool:pen.tool,color:pen.tool==='hl'?pen.hl:pen.color,size:pen.size,stylus:e.pointerType==='pen',pts:[pos(e)]};
     pen.strokes.push(cur);penDraw();
   });
   c.addEventListener('pointermove',e=>{if(!cur)return;(e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>cur.pts.push(pos(ev)));penDraw();});
@@ -2643,7 +2647,8 @@ function penBar(){
   bar.replaceChildren(
     tool('pen','Pen'),tool('hl','Highlighter'),tool('eraser','Eraser'),
     h('span',{class:'pen-sep'}),
-    ...PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(pen.color===k?' on':''),type:'button',title:k[0].toUpperCase()+k.slice(1),'aria-label':k+' ink','aria-pressed':String(pen.color===k),onclick:()=>{pen.color=k;if(pen.tool!=='pen')pen.tool='pen';penBar();}});b.style.background=penColor(k);return b;}),
+    ...(pen.tool==='hl'?HL_COLORS.map(([k,name])=>{const b=h('button',{class:'sw pen-sw'+(pen.hl===k?' on':''),type:'button',title:name+' highlighter','aria-label':name+' highlighter','aria-pressed':String(pen.hl===k),onclick:()=>{pen.hl=k;penBar();}});b.style.background=penColor(k);return b;}):
+      pen.tool==='eraser'?[]:PEN_COLORS.map(([k])=>{const b=h('button',{class:'sw pen-sw'+(pen.color===k?' on':''),type:'button',title:k[0].toUpperCase()+k.slice(1),'aria-label':k+' ink','aria-pressed':String(pen.color===k),onclick:()=>{pen.color=k;if(pen.tool!=='pen')pen.tool='pen';penBar();}});b.style.background=penColor(k);return b;})),
     h('span',{class:'pen-sep'}),
     h('button',{class:'chip'+(pen.size==='thick'?' on':''),type:'button','aria-pressed':String(pen.size==='thick'),onclick:()=>{pen.size=pen.size==='thick'?'thin':'thick';penBar();}},'Thick'),
     h('span',{class:'pen-sep'}),
