@@ -66,7 +66,7 @@ test('Save as PDF downloads the screen with the writing on it', async ({ page })
   const dl = page.waitForEvent('download', { timeout: 30000 });
   await page.click('.pen-bar >> text=Save as PDF');
   const d = await dl;
-  expect(d.suggestedFilename()).toMatch(/^Classboard Screen 1\.pdf$/);
+  expect(d.suggestedFilename()).toMatch(/^Classboard Screen 1 \d{4}-\d{2}-\d{2}\.pdf$/);
   const file = await d.path();
   const bytes = fs.readFileSync(file);
   expect(bytes.slice(0, 5).toString()).toBe('%PDF-');
@@ -102,7 +102,7 @@ test('full screen: Pen and Save as PDF are one click away, and the pen draws ove
   await page.click('.pen-bar >> text=Done');
   const dl = page.waitForEvent('download', { timeout: 30000 });
   await page.click('.widget.full .full-save');
-  expect((await dl).suggestedFilename()).toBe('Classboard Screen 1.pdf');
+  expect((await dl).suggestedFilename()).toMatch(/^Classboard Screen 1 \d{4}-\d{2}-\d{2}\.pdf$/);
 });
 
 test('a Slides screen is saved by capturing the tab, since the slide is another site\'s frame', async ({ page }) => {
@@ -123,7 +123,7 @@ test('a Slides screen is saved by capturing the tab, since the slide is another 
   await page.click('.pen-bar >> text=Save as PDF');
   const d = await dl;
   expect(await page.evaluate(() => window.__shared)).toBe(1);
-  expect(d.suggestedFilename()).toBe('Classboard Screen 1.pdf');
+  expect(d.suggestedFilename()).toMatch(/^Classboard Screen 1 \d{4}-\d{2}-\d{2}\.pdf$/);
   expect(require('fs').readFileSync(await d.path()).slice(0, 5).toString()).toBe('%PDF-');
   // The buttons are shown again afterward.
   await expect(page.locator('.pen-bar')).toBeVisible();
