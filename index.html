@@ -15,24 +15,29 @@
 :root{
   --font-display:'Source Sans 3','Segoe UI',system-ui,sans-serif;
   --font-body:var(--font-display);
-  --bg:#ffffff; --bar:#ffffff; --ink:#0b1220; --muted:#243044; --panel:#ffffff; --panel2:#f1f5fb; --line:#52627f; --edge:#2f3f5c; --accent:#0a3ca3; --accent-ink:#ffffff; --accent-soft:#d9e6ff; --sun:#ffc400; --on-sun:#1a1300; --mist:#d5e3ff;
+  --bg:#ffffff; --bar:#ffffff; --ink:#0b1220; --muted:#243044; --panel:#ffffff; --panel2:#f1f5fb; --line:#52627f; --edge:#2f3f5c; --accent:#0a3ca3; --accent-ink:#ffffff; --accent-soft:#d9e6ff; --mist:#d5e3ff;
+  --sun:#ffc400; --on-sun:#14100a;
   --danger:#0b1220; --on-danger:#ffffff;
   --shadow:0 1px 2px rgba(15,25,45,.12),0 6px 18px rgba(15,25,45,.10);
   --r-card:16px; --r-ctl:10px;
 }
-:root[data-look="graphite"]{--bg:#ffffff; --bar:#ffffff; --ink:#111418; --muted:#2c323b; --panel:#ffffff; --panel2:#f3f4f6; --line:#5b6573; --edge:#2b323d; --accent:#18212e; --accent-ink:#ffffff; --accent-soft:#e6e9ee; --sun:#ff7a00; --on-sun:#1c0d00; --mist:#e3e6eb;}
-:root[data-look="forest"]{--bg:#ffffff; --bar:#ffffff; --ink:#0b1510; --muted:#22332a; --panel:#ffffff; --panel2:#f1f7f3; --line:#4f6b5c; --edge:#2a4636; --accent:#055528; --accent-ink:#ffffff; --accent-soft:#d3f2df; --sun:#ffcc00; --on-sun:#1a1400; --mist:#d4efdf;}
-:root[data-look="plum"]{--bg:#ffffff; --bar:#ffffff; --ink:#150d1f; --muted:#31233f; --panel:#ffffff; --panel2:#f6f2fa; --line:#6a5580; --edge:#3d2a55; --accent:#5e1a9e; --accent-ink:#ffffff; --accent-soft:#e8d9fa; --sun:#ffb000; --on-sun:#1c1000; --mist:#e6d9f7;}
+:root[data-main="graphite"]{--bg:#ffffff; --bar:#ffffff; --ink:#111418; --muted:#2c323b; --panel:#ffffff; --panel2:#f3f4f6; --line:#5b6573; --edge:#2b323d; --accent:#18212e; --accent-ink:#ffffff; --accent-soft:#e6e9ee; --mist:#e3e6eb;}
+:root[data-main="forest"]{--bg:#ffffff; --bar:#ffffff; --ink:#0b1510; --muted:#22332a; --panel:#ffffff; --panel2:#f1f7f3; --line:#4f6b5c; --edge:#2a4636; --accent:#055528; --accent-ink:#ffffff; --accent-soft:#d3f2df; --mist:#d4efdf;}
+:root[data-main="plum"]{--bg:#ffffff; --bar:#ffffff; --ink:#150d1f; --muted:#31233f; --panel:#ffffff; --panel2:#f6f2fa; --line:#6a5580; --edge:#3d2a55; --accent:#5e1a9e; --accent-ink:#ffffff; --accent-soft:#e8d9fa; --mist:#e6d9f7;}
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--bg:#0a101c; --bar:#101827; --ink:#f1f5fb; --muted:#c3cfe2; --panel:#111a2b; --panel2:#17233a; --line:#7f93b5; --edge:#6d84ab; --accent:#8db4ff; --accent-ink:#04122b; --accent-soft:#11223f; --sun:#ffcf4a; --on-sun:#1a1300; --mist:#0c1424; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-  :root:not([data-theme="light"])[data-look="graphite"]{--bg:#0d0f12; --bar:#14171b; --ink:#f3f4f6; --muted:#c9ced6; --panel:#15181d; --panel2:#1d2128; --line:#8a94a3; --edge:#6b7585; --accent:#e5e7eb; --accent-ink:#111418; --accent-soft:#2b313a; --sun:#ffa23a; --on-sun:#1c0d00; --mist:#101317; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-  :root:not([data-theme="light"])[data-look="forest"]{--bg:#08130e; --bar:#0e1b15; --ink:#eef7f1; --muted:#bfd3c6; --panel:#0f1d16; --panel2:#15291f; --line:#75937f; --edge:#5f8a72; --accent:#6fe3a6; --accent-ink:#032013; --accent-soft:#103626; --sun:#ffd23d; --on-sun:#1a1400; --mist:#0a1812; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-  :root:not([data-theme="light"])[data-look="plum"]{--bg:#100a19; --bar:#171025; --ink:#f6f0fc; --muted:#d3c4e6; --panel:#181028; --panel2:#21173a; --line:#9a82ba; --edge:#7e65a3; --accent:#cfaaff; --accent-ink:#1a0833; --accent-soft:#2f1d56; --sun:#ffc04d; --on-sun:#1c1000; --mist:#120b1d; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+  :root:not([data-theme="light"]){--bg:#0a101c; --bar:#101827; --ink:#f1f5fb; --muted:#c3cfe2; --panel:#111a2b; --panel2:#17233a; --line:#7f93b5; --edge:#6d84ab; --accent:#8db4ff; --accent-ink:#04122b; --accent-soft:#11223f; --mist:#0c1424; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+  :root:not([data-theme="light"])[data-main="graphite"]{--bg:#0d0f12; --bar:#14171b; --ink:#f3f4f6; --muted:#c9ced6; --panel:#15181d; --panel2:#1d2128; --line:#8a94a3; --edge:#6b7585; --accent:#e5e7eb; --accent-ink:#111418; --accent-soft:#2b313a; --mist:#101317; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+  :root:not([data-theme="light"])[data-main="forest"]{--bg:#08130e; --bar:#0e1b15; --ink:#eef7f1; --muted:#bfd3c6; --panel:#0f1d16; --panel2:#15291f; --line:#75937f; --edge:#5f8a72; --accent:#6fe3a6; --accent-ink:#032013; --accent-soft:#103626; --mist:#0a1812; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+  :root:not([data-theme="light"])[data-main="plum"]{--bg:#100a19; --bar:#171025; --ink:#f6f0fc; --muted:#d3c4e6; --panel:#181028; --panel2:#21173a; --line:#9a82ba; --edge:#7e65a3; --accent:#cfaaff; --accent-ink:#1a0833; --accent-soft:#2f1d56; --mist:#120b1d; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
 }
-:root[data-theme="dark"]{--bg:#0a101c; --bar:#101827; --ink:#f1f5fb; --muted:#c3cfe2; --panel:#111a2b; --panel2:#17233a; --line:#7f93b5; --edge:#6d84ab; --accent:#8db4ff; --accent-ink:#04122b; --accent-soft:#11223f; --sun:#ffcf4a; --on-sun:#1a1300; --mist:#0c1424; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-:root[data-theme="dark"][data-look="graphite"]{--bg:#0d0f12; --bar:#14171b; --ink:#f3f4f6; --muted:#c9ced6; --panel:#15181d; --panel2:#1d2128; --line:#8a94a3; --edge:#6b7585; --accent:#e5e7eb; --accent-ink:#111418; --accent-soft:#2b313a; --sun:#ffa23a; --on-sun:#1c0d00; --mist:#101317; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-:root[data-theme="dark"][data-look="forest"]{--bg:#08130e; --bar:#0e1b15; --ink:#eef7f1; --muted:#bfd3c6; --panel:#0f1d16; --panel2:#15291f; --line:#75937f; --edge:#5f8a72; --accent:#6fe3a6; --accent-ink:#032013; --accent-soft:#103626; --sun:#ffd23d; --on-sun:#1a1400; --mist:#0a1812; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
-:root[data-theme="dark"][data-look="plum"]{--bg:#100a19; --bar:#171025; --ink:#f6f0fc; --muted:#d3c4e6; --panel:#181028; --panel2:#21173a; --line:#9a82ba; --edge:#7e65a3; --accent:#cfaaff; --accent-ink:#1a0833; --accent-soft:#2f1d56; --sun:#ffc04d; --on-sun:#1c1000; --mist:#120b1d; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+:root[data-theme="dark"]{--bg:#0a101c; --bar:#101827; --ink:#f1f5fb; --muted:#c3cfe2; --panel:#111a2b; --panel2:#17233a; --line:#7f93b5; --edge:#6d84ab; --accent:#8db4ff; --accent-ink:#04122b; --accent-soft:#11223f; --mist:#0c1424; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+:root[data-theme="dark"][data-main="graphite"]{--bg:#0d0f12; --bar:#14171b; --ink:#f3f4f6; --muted:#c9ced6; --panel:#15181d; --panel2:#1d2128; --line:#8a94a3; --edge:#6b7585; --accent:#e5e7eb; --accent-ink:#111418; --accent-soft:#2b313a; --mist:#101317; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+:root[data-theme="dark"][data-main="forest"]{--bg:#08130e; --bar:#0e1b15; --ink:#eef7f1; --muted:#bfd3c6; --panel:#0f1d16; --panel2:#15291f; --line:#75937f; --edge:#5f8a72; --accent:#6fe3a6; --accent-ink:#032013; --accent-soft:#103626; --mist:#0a1812; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+:root[data-theme="dark"][data-main="plum"]{--bg:#100a19; --bar:#171025; --ink:#f6f0fc; --muted:#d3c4e6; --panel:#181028; --panel2:#21173a; --line:#9a82ba; --edge:#7e65a3; --accent:#cfaaff; --accent-ink:#1a0833; --accent-soft:#2f1d56; --mist:#120b1d; --danger:#f1f5fb; --on-danger:#0b1220; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 22px rgba(0,0,0,.45); color-scheme:dark;}
+:root[data-accent="orange"]{--sun:#ff7a00; --on-sun:#14100a;}
+:root[data-accent="sky"]{--sun:#4fc3ff; --on-sun:#14100a;}
+:root[data-accent="mint"]{--sun:#4ddc9b; --on-sun:#14100a;}
+:root[data-accent="pink"]{--sun:#ff8cc6; --on-sun:#14100a;}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -352,13 +357,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .present .ag-row{grid-template-columns:24px minmax(0,1fr)}
 .present .st-txt{pointer-events:none}
 
-.look-list{display:flex;flex-direction:column;gap:6px}
 .pop-note{margin:0 0 8px;color:var(--muted);font-size:13px}
-.pop .opt.look{flex-direction:row;align-items:center;gap:10px}
-.look.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);font-weight:700}
-.look small{margin-left:auto}
-.look-sw{display:inline-flex;flex:none;border:1px solid var(--edge);border-radius:999px;overflow:hidden}
-.look-sw i{display:block;width:16px;height:22px}
+.look-row{display:flex;flex-wrap:wrap;gap:6px}
+.look-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;font-weight:500}
+.look-chip:hover{background:var(--accent-soft)}
+.look-chip.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);font-weight:700}
+.look-dot{display:block;width:18px;height:18px;border-radius:50%;border:1px solid var(--ink)}
 /* Seating chart */
 .seats{gap:6px}
 .seat-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
@@ -509,11 +513,13 @@ const TYPES={
 };
 
 /* Fill in missing fields so saved or imported data is safe to render. */
-/* Color looks: [key, name, accent, gold or orange, board]. The values live in the CSS under data-look. */
-const LOOKS=[['navy','Navy and gold','#0a3ca3','#ffc400','#d5e3ff'],['graphite','Graphite and orange','#18212e','#ff7a00','#e3e6eb'],['forest','Forest and gold','#055528','#ffcc00','#d4efdf'],['plum','Plum and amber','#5e1a9e','#ffb000','#e6d9f7']];
-function applyLook(){document.documentElement.dataset.look=(LOOKS.find(l=>l[0]===S.look)||LOOKS[0])[0];}
+/* Colors: a main color and an accent color, chosen separately. The values live in the CSS under data-main and data-accent. */
+const MAINS=[['navy','Navy','#0a3ca3'],['graphite','Graphite','#18212e'],['forest','Forest','#055528'],['plum','Plum','#5e1a9e']],ACCENTS=[['gold','Gold','#ffc400'],['orange','Orange','#ff7a00'],['sky','Sky','#4fc3ff'],['mint','Mint','#4ddc9b'],['pink','Pink','#ff8cc6']];
+const pickOf=(list,k)=>list.find(x=>x[0]===k)||list[0];
+function applyLook(){document.documentElement.dataset.main=pickOf(MAINS,S.main)[0];document.documentElement.dataset.accent=pickOf(ACCENTS,S.accent)[0];}
 function normalize(D){
-  if(!LOOKS.some(l=>l[0]===D.look)) D.look='navy';
+  if(!MAINS.some(m=>m[0]===D.main)) D.main='navy';
+  if(!ACCENTS.some(m=>m[0]===D.accent)) D.accent='gold';
   if(!Array.isArray(D.classes)) D.classes=[];
   if(!Array.isArray(D.templates)) D.templates=[];
   D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
@@ -603,7 +609,7 @@ const b64ToBlob=(b64,type)=>{const bin=atob(b64),u=new Uint8Array(bin.length);fo
 /* ---------- Undo ---------- */
 /* Every saved change becomes a snapshot. Image data is kept once in IMG and referenced by id, so
    snapshots stay small. Switching screens, the floating window view, and backup dates are not undoable. */
-const UNDO_MAX=40,NO_UNDO=['active','floatMode','lastBackup','since','look'],IMG=new Map(),IMGK=new Map();
+const UNDO_MAX=40,NO_UNDO=['active','floatMode','lastBackup','since','main','accent'],IMG=new Map(),IMGK=new Map();
 let hist=[];
 function snap(){
   return JSON.stringify(S,function(k,v){
@@ -2265,7 +2271,7 @@ function gearPop(anchor){
   openPop(anchor,box=>{
     box.classList.add('menu');
     box.append(h('h3',null,'Settings'),
-      h('button',{class:'opt',type:'button',onclick:then(lookPop)},'Look',h('small',null,(LOOKS.find(l=>l[0]===S.look)||LOOKS[0])[1])),
+      h('button',{class:'opt',type:'button',onclick:then(lookPop)},'Colors',h('small',null,pickOf(MAINS,S.main)[1]+' and '+pickOf(ACCENTS,S.accent)[1].toLowerCase())),
       h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
       h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
       h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')),
@@ -2277,15 +2283,18 @@ function gearPop(anchor){
 /* ---------- Look ---------- */
 function lookPop(anchor){
   openPop(anchor,box=>{
-    box.append(h('h3',null,'Look'),h('p',{class:'pop-note'},'Pick the colors for your whole board. Dark mode follows your device.'));
-    const list=h('div',{class:'look-list'});
-    const draw=()=>list.replaceChildren(...LOOKS.map(([k,name,a,g,m])=>{
-      const on=S.look===k;
-      return h('button',{class:'opt look'+(on?' on':''),type:'button','aria-pressed':String(on),onclick:()=>{S.look=k;applyLook();save();draw();}},
-        h('span',{class:'look-sw','aria-hidden':'true'},h('i',{style:'background:'+a}),h('i',{style:'background:'+g}),h('i',{style:'background:'+m})),
-        name,on?h('small',null,'Selected'):null);
-    }));
-    draw();box.append(list);
+    box.append(h('h3',null,'Colors'),h('p',{class:'pop-note'},'Pick a main color and an accent color. Dark mode follows your device.'));
+    const mk=(title,list,field)=>{
+      const row=h('div',{class:'look-row',role:'group','aria-label':title});
+      const draw=()=>row.replaceChildren(...list.map(([k,name,hex])=>{
+        const on=pickOf(list,S[field])[0]===k;
+        return h('button',{class:'look-chip'+(on?' on':''),type:'button','aria-pressed':String(on),onclick:()=>{S[field]=k;applyLook();save();draw();}},
+          h('i',{class:'look-dot','aria-hidden':'true',style:'background:'+hex}),name);
+      }));
+      draw();box.append(h('h3',null,title),row);
+    };
+    mk('Main color',MAINS,'main');
+    mk('Accent color',ACCENTS,'accent');
   });
 }
 

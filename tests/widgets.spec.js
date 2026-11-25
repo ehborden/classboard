@@ -256,16 +256,21 @@ test('image: the header title can be renamed, saved, and survives a reload', asy
   await expect(page.locator('.widget.min')).toHaveCount(0);
 });
 
-test('look: the color look can be changed, is saved, and survives a reload', async ({ page }) => {
+test('colors: main and accent are chosen separately, saved, and survive a reload', async ({ page }) => {
   await openApp(page, agendaBoard());
-  await expect(page.locator('html')).toHaveAttribute('data-look', 'navy');
+  await expect(page.locator('html')).toHaveAttribute('data-main', 'navy');
+  await expect(page.locator('html')).toHaveAttribute('data-accent', 'gold');
   await page.click('#bGear');
-  await page.click('.pop .opt >> text=Look');
-  await page.click('.pop .opt.look >> text=Forest and gold');
-  await expect(page.locator('html')).toHaveAttribute('data-look', 'forest');
-  await expect(page.locator('.pop .opt.look.on')).toContainText('Selected');
+  await page.click('.pop .opt >> text=Colors');
+  await page.click('.look-chip >> text=Forest');
+  await page.click('.look-chip >> text=Orange');
+  await expect(page.locator('html')).toHaveAttribute('data-main', 'forest');
+  await expect(page.locator('html')).toHaveAttribute('data-accent', 'orange');
+  await expect(page.locator('.look-chip.on')).toHaveCount(2);
   await settle(page);
-  expect((await stored(page)).look).toBe('forest');
+  const st = await stored(page);
+  expect([st.main, st.accent]).toEqual(['forest', 'orange']);
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-look', 'forest');
+  await expect(page.locator('html')).toHaveAttribute('data-main', 'forest');
+  await expect(page.locator('html')).toHaveAttribute('data-accent', 'orange');
 });
