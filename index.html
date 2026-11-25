@@ -37,7 +37,7 @@
 :root[data-accent="orange"]{--sun:#ff7a00; --on-sun:#14100a;}
 :root[data-accent="sky"]{--sun:#4fc3ff; --on-sun:#14100a;}
 :root[data-accent="mint"]{--sun:#4ddc9b; --on-sun:#14100a;}
-:root[data-accent="pink"]{--sun:#ff8cc6; --on-sun:#14100a;}
+:root[data-accent="lime"]{--sun:#b8e62e; --on-sun:#14100a;}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -120,7 +120,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .wtools{margin-left:auto;display:flex;gap:2px;flex:none}
 .tb{height:24px;min-width:24px;padding:0 7px;border:1px solid transparent;background:transparent;color:var(--muted);font:600 12px var(--font-body);border-radius:6px;cursor:pointer}
 .tb:hover{background:var(--line);color:var(--ink)}
-.tb.on{background:var(--sun);color:var(--on-sun)}
+.tb.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);font-weight:700}
 .tb[title="More list options"]{min-width:18px;padding:0 4px;margin-left:-3px}
 .wbody{position:relative;flex:1;min-height:0;container-type:size;display:flex;flex-direction:column;gap:8px;padding:12px 14px;overflow:hidden}
 .wbody.flush{padding:0;gap:0}
@@ -233,13 +233,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Agenda */
 .agenda{gap:6px}
-.ag-title{border:0;background:transparent;font:700 min(7cqw,20px) var(--font-display);padding:2px 4px;width:100%;border-radius:6px}
+.ag-title{border:0;border-bottom:2px solid var(--sun);background:transparent;font:700 min(7cqw,20px) var(--font-display);padding:2px 4px;width:100%;border-radius:6px 6px 0 0}
 .ag-title:hover,.ag-title:focus{background:var(--panel2)}
 .ag-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;font-size:max(var(--min-text,0px),clamp(13px,4.4cqw,22px))}
 .ag-row{display:grid;grid-template-columns:14px 24px minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
-/* One static accent: the current row is bold and accent-colored. Every other row is normal weight and gray (still 7:1). */
+/* One static accent: the current row is bold on an accent highlight. Every other row is normal weight and gray (still 7:1). */
 .ag-row .ag-txt{color:var(--muted)}
-.ag-row.now .ag-txt{font-weight:700;color:var(--accent)}
+.ag-row.now{background:var(--sun)}
+.ag-row.now .ag-txt{font-weight:700;color:var(--on-sun)}
 .ag-grip{cursor:grab;color:var(--muted);text-align:center;user-select:none;touch-action:none;font-size:16px;line-height:1}
 .ag-row.drag{background:var(--panel2);box-shadow:var(--shadow)}
 .present .ag-row.out{display:none}
@@ -259,7 +260,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .st-txt{border:0;background:transparent;padding:.15em .25em;border-radius:6px;font-size:inherit;min-width:0;width:100%}
 .st-txt:hover,.st-txt:focus{background:var(--panel2)}
 .st-row .st-txt{color:var(--muted)}
-.st-row.cur .st-txt,.st-row.cur .st-n{font-weight:700;color:var(--accent)}
+.st-row.cur{background:var(--sun)}
+.st-row.cur .st-txt,.st-row.cur .st-n{font-weight:700;color:var(--on-sun)}
 .st-row.done .st-txt{text-decoration:line-through;text-decoration-thickness:.08em}
 
 /* Picker */
@@ -514,7 +516,7 @@ const TYPES={
 
 /* Fill in missing fields so saved or imported data is safe to render. */
 /* Colors: a main color and an accent color, chosen separately. The values live in the CSS under data-main and data-accent. */
-const MAINS=[['navy','Navy','#0a3ca3'],['graphite','Graphite','#18212e'],['forest','Forest','#055528'],['plum','Plum','#5e1a9e']],ACCENTS=[['gold','Gold','#ffc400'],['orange','Orange','#ff7a00'],['sky','Sky','#4fc3ff'],['mint','Mint','#4ddc9b'],['pink','Pink','#ff8cc6']];
+const MAINS=[['navy','Navy','#0a3ca3'],['graphite','Graphite','#18212e'],['forest','Forest','#055528'],['plum','Plum','#5e1a9e']],ACCENTS=[['gold','Gold','#ffc400'],['orange','Orange','#ff7a00'],['sky','Sky','#4fc3ff'],['mint','Mint','#4ddc9b'],['lime','Lime','#b8e62e']];
 const pickOf=(list,k)=>list.find(x=>x[0]===k)||list[0];
 function applyLook(){document.documentElement.dataset.main=pickOf(MAINS,S.main)[0];document.documentElement.dataset.accent=pickOf(ACCENTS,S.accent)[0];}
 function normalize(D){
