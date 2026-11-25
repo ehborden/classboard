@@ -96,9 +96,15 @@ button,input,select,textarea{font:inherit;color:inherit}
 .widget.full{left:0!important;top:0!important;width:100%!important;height:100%!important;z-index:700!important;border-radius:0}
 .widget.full .resize{display:none}
 .widget.full .tb.fullb{background:var(--accent-soft);color:var(--accent)}
-.full-exit{display:none;position:absolute;right:12px;bottom:12px;z-index:5;opacity:.85}
-.widget.full .full-exit{display:inline-block}
-.full-exit:hover,.full-exit:focus-visible{opacity:1}
+.full-exit,.full-save,.full-pen{display:none;position:absolute;bottom:12px;z-index:5;opacity:.9}
+.full-exit{right:12px}
+.full-pen{right:290px;font-weight:700}
+.pen-on .full-pen,.pen-on .full-save{visibility:hidden}
+.full-save{right:150px;font-weight:700;background:var(--sun);border-color:var(--on-sun);color:var(--on-sun)}
+.widget.full .full-exit,.widget.full .full-save,.widget.full .full-pen{display:inline-block}
+.full-exit:hover,.full-exit:focus-visible,.full-save:hover,.full-save:focus-visible,.full-pen:hover,.full-pen:focus-visible{opacity:1}
+/* While the tab is being captured for a PDF, hide the buttons so they are not in the picture. */
+.capturing .pen-bar,.capturing .full-exit,.capturing .full-save,.capturing .full-pen,.capturing .resize,.capturing .toast{visibility:hidden}
 .widget.min .whead{border-bottom:0}
 .present .widget.min .whead{display:flex;cursor:pointer}
 .present .widget.min .wtools>:not(.minb){display:none}
@@ -334,7 +340,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pen-layer{position:fixed;z-index:800;pointer-events:none;touch-action:none}
 .pen-layer[hidden]{display:none}
 .pen-layer.drawing{pointer-events:auto;cursor:crosshair}
-.pen-bar{position:fixed;z-index:850;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--bar);border:1px solid var(--line);border-radius:14px;padding:6px 8px;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+.pen-bar{width:max-content;position:fixed;z-index:850;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--bar);border:1px solid var(--line);border-radius:14px;padding:6px 8px;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
 .pen-bar[hidden]{display:none}
 .present .pen-bar{top:14px}
 .pen-bar .chip{font-size:13px;padding:5px 11px}
@@ -759,7 +765,9 @@ function renderWidget(w){
   /* Full size fills the board with this widget for now, without changing its saved size or place. */
   const fullB=tbtn('\u2922','Full size',()=>setFull(fullId===w.id?null:w.id));
   fullB.classList.add('fullb');
-  el.append(h('button',{class:'btn full-exit',type:'button',onclick:()=>setFull(null)},'Exit full size'));
+  el.append(h('button',{class:'btn full-pen',type:'button',title:'Draw on this screen',onclick:()=>setPen(true)},'Pen'),
+    h('button',{class:'btn full-save',type:'button',title:'Save this screen, with any writing, as a PDF',onclick:e=>savePdf(e.currentTarget)},'Save as PDF'),
+    h('button',{class:'btn full-exit',type:'button',onclick:()=>setFull(null)},'Exit full size'));
   if(fullId===w.id)el.classList.add('full');
   tools.append(fullB,minB,rm);
   el.addEventListener('pointerdown',e=>{
@@ -2646,8 +2654,8 @@ function drawStrokes(g,strokes,W,H){
 }
 function clearPen(){pen.strokes=[];penDraw();}
 /* Save the current screen, with any writing on it, as a one-page PDF. The page is the board's own shape, so
-   nothing is cropped. The helpers load only when this is used. Slides, documents, and the camera are
-   embedded frames the browser will not let a page copy, so they come out blank. */
+   nothing is cropped. The helpers load only when this is used. A board with a Slides, Word, or web page frame
+   goes through grabTab instead, because the browser will not let a page copy another site's frame. */
 function flattenColors(doc){
   const cv=document.createElement('canvas');cv.width=cv.height=1;
   const cx=cv.getContext('2d',{willReadFrequently:true});
@@ -2670,16 +2678,46 @@ function flattenColors(doc){
     }else if(bs&&bs.includes('color('))el.style.boxShadow='none';
   });
 }
+/* Slides, Word, and web pages are frames from another site, which the page cannot copy. For those, ask the
+   browser to share this tab for a moment, take one picture of the board from it, and stop sharing. */
+async function grabTab(){
+  const md=navigator.mediaDevices;
+  if(!md||!md.getDisplayMedia)throw new Error('This browser cannot capture a slide. Use Chrome or Edge.');
+  document.body.classList.add('capturing');
+  let stream=null;
+  try{
+    stream=await md.getDisplayMedia({video:true,audio:false,preferCurrentTab:true,selfBrowserSurface:'include'});
+    const v=document.createElement('video');v.muted=true;v.srcObject=stream;
+    await v.play();
+    await new Promise(res=>setTimeout(res,450));
+    const k=v.videoWidth/window.innerWidth,r=boardEl.getBoundingClientRect();
+    const c=document.createElement('canvas');c.width=Math.max(1,Math.round(r.width*k));c.height=Math.max(1,Math.round(r.height*k));
+    c.getContext('2d').drawImage(v,r.left*k,r.top*k,r.width*k,r.height*k,0,0,c.width,c.height);
+    return c;
+  }catch(e){
+    if(e&&(e.name==='NotAllowedError'||e.name==='AbortError'))throw new Error('Saving was canceled. Choose "This tab" when the browser asks.');
+    throw e;
+  }finally{
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    document.body.classList.remove('capturing');
+  }
+}
 async function savePdf(btn){
   if(btn.disabled)return;
   const label=btn.textContent;btn.disabled=true;btn.textContent='Saving...';
   try{
-    await Promise.all([loadScript(LIBS.h2c),loadScript(LIBS.jspdf)]);
-    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
-    const shot=await window.html2canvas(boardEl,{scale:2,backgroundColor:null,logging:false,useCORS:true,
-      ignoreElements:el=>!!(el.classList&&(el.classList.contains('resize')||el.classList.contains('full-exit'))),
-      onclone:flattenColors});
-    if(pen.canvas&&pen.strokes.length)shot.getContext('2d').drawImage(pen.canvas,0,0,shot.width,shot.height);
+    await loadScript(LIBS.jspdf);
+    const framed=[...boardEl.querySelectorAll('iframe')].some(f=>f.offsetWidth>40&&f.offsetHeight>40);
+    let shot;
+    if(framed)shot=await grabTab();
+    else{
+      await loadScript(LIBS.h2c);
+      if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+      shot=await window.html2canvas(boardEl,{scale:2,backgroundColor:null,logging:false,useCORS:true,
+        ignoreElements:el=>!!(el.classList&&(el.classList.contains('resize')||el.classList.contains('full-exit')||el.classList.contains('full-save')||el.classList.contains('full-pen'))),
+        onclone:flattenColors});
+      if(pen.canvas&&pen.strokes.length)shot.getContext('2d').drawImage(pen.canvas,0,0,shot.width,shot.height);
+    }
     const pw=792,ph=pw*shot.height/shot.width;
     const pdf=new window.jspdf.jsPDF({orientation:pw>=ph?'landscape':'portrait',unit:'pt',format:[pw,ph]});
     pdf.addImage(shot.toDataURL('image/jpeg',.92),'JPEG',0,0,pw,ph);
@@ -2709,7 +2747,7 @@ function penBar(){
   bar.hidden=!pen.on;
 }
 function setPen(on){
-  pen.on=on;penSetup();closePop();penBar();penDraw();
+  pen.on=on;document.body.classList.toggle('pen-on',on);penSetup();closePop();penBar();penDraw();
   ['#bPen','#pPen'].forEach(id=>{const b=$(id);b.classList.toggle('primary',on);b.setAttribute('aria-pressed',String(on));});
   if(on&&!sessionStorage.getItem('penTip')){try{sessionStorage.setItem('penTip','1');}catch(e){}toast('Drawing on the board. Marks are not saved. Press Done or Esc to use the widgets again.');}
 }

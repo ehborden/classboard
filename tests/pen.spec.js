@@ -86,3 +86,46 @@ test('Save as PDF also works on a screen with agenda highlights', async ({ page 
   fs2.copyFileSync(f, 'test-results/saved-agenda.pdf');
   expect(fs2.readFileSync(f).slice(0, 5).toString()).toBe('%PDF-');
 });
+
+test('full screen: Pen and Save as PDF are one click away, and the pen draws over the widget', async ({ page }) => {
+  await openApp(page, board([widget('text', { html: '<b>Notes</b>', fs: 40 }, [0.05, 0.1, 0.6, 0.5])]));
+  await page.click('.widget .tb[title="Full size"]');
+  await expect(page.locator('.widget.full .full-pen')).toBeVisible();
+  await expect(page.locator('.widget.full .full-save')).toBeVisible();
+  await page.click('.widget.full .full-pen');
+  await expect(page.locator('.pen-bar')).toBeVisible();
+  // The pen bar fits on one row, so it does not cover the widget more than it has to.
+  expect((await page.locator('.pen-bar').boundingBox()).height).toBeLessThan(60);
+  await expect(page.locator('.widget.full .full-pen')).toBeHidden();
+  await page.mouse.move(200, 300); await page.mouse.down(); await page.mouse.move(500, 320, { steps: 6 }); await page.mouse.up();
+  expect(await inked(page)).toBeGreaterThan(200);
+  await page.click('.pen-bar >> text=Done');
+  const dl = page.waitForEvent('download', { timeout: 30000 });
+  await page.click('.widget.full .full-save');
+  expect((await dl).suggestedFilename()).toBe('Classboard Screen 1.pdf');
+});
+
+test('a Slides screen is saved by capturing the tab, since the slide is another site\'s frame', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__shared = 0;
+    navigator.mediaDevices.getDisplayMedia = async () => {
+      window.__shared++;
+      const c = document.createElement('canvas'); c.width = innerWidth; c.height = innerHeight;
+      const g = c.getContext('2d'); let n = 0;
+      setInterval(() => { g.fillStyle = n++ % 2 ? '#c9e2ff' : '#c9e2fe'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#0a3ca3'; g.fillRect(100, 100, 300, 120); }, 50);
+      return c.captureStream(20);
+    };
+  });
+  await openApp(page, board([widget('slides', { url: 'https://onedrive.live.com/embed?cid=AB12&resid=AB12%21123&authkey=XYZ&em=2' }, [0.02, 0.02, 0.95, 0.9])]));
+  await expect(page.locator('.slides iframe, .wbody iframe').first()).toBeVisible();
+  const dl = page.waitForEvent('download', { timeout: 30000 });
+  await page.click('#bPen');
+  await page.click('.pen-bar >> text=Save as PDF');
+  const d = await dl;
+  expect(await page.evaluate(() => window.__shared)).toBe(1);
+  expect(d.suggestedFilename()).toBe('Classboard Screen 1.pdf');
+  expect(require('fs').readFileSync(await d.path()).slice(0, 5).toString()).toBe('%PDF-');
+  // The buttons are shown again afterward.
+  await expect(page.locator('.pen-bar')).toBeVisible();
+  await expect(page.locator('body')).not.toHaveClass(/capturing/);
+});
