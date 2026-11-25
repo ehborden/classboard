@@ -266,11 +266,28 @@ test('colors: main and accent are chosen separately, saved, and survive a reload
   await page.click('.look-chip >> text=Orange');
   await expect(page.locator('html')).toHaveAttribute('data-main', 'forest');
   await expect(page.locator('html')).toHaveAttribute('data-accent', 'orange');
-  await expect(page.locator('.look-chip.on')).toHaveCount(2);
+  await expect(page.locator('.look-chip.on:not(.font-chip)')).toHaveCount(2);
   await settle(page);
   const st = await stored(page);
   expect([st.main, st.accent]).toEqual(['forest', 'orange']);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-main', 'forest');
   await expect(page.locator('html')).toHaveAttribute('data-accent', 'orange');
+});
+
+test('font: Source Sans 3 is the default, another can be picked, and it is saved', async ({ page }) => {
+  await openApp(page, agendaBoard());
+  await expect(page.locator('html')).toHaveAttribute('data-font', 'source');
+  await expect(page.locator('link[data-font="lexend"]')).toHaveCount(0);
+  await page.click('#bGear');
+  await page.click('.pop .opt >> text=Colors and font');
+  await page.click('.look-chip.font-chip >> text=Lexend');
+  await expect(page.locator('html')).toHaveAttribute('data-font', 'lexend');
+  await expect(page.locator('link[data-font="lexend"]')).toHaveCount(1);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--font-display'))).toContain('Lexend');
+  await expect(page.locator('.font-chip.on')).toHaveCount(1);
+  await settle(page);
+  expect((await stored(page)).font).toBe('lexend');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-font', 'lexend');
 });

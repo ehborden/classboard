@@ -38,6 +38,8 @@
 :root[data-accent="sky"]{--sun:#4fc3ff; --on-sun:#14100a;}
 :root[data-accent="mint"]{--sun:#4ddc9b; --on-sun:#14100a;}
 :root[data-accent="lime"]{--sun:#b8e62e; --on-sun:#14100a;}
+:root[data-font="lexend"]{--font-display:'Lexend','Segoe UI',system-ui,sans-serif}
+:root[data-font="atkinson"]{--font-display:'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -371,6 +373,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .look-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;font-weight:500}
 .look-chip:hover{background:var(--accent-soft)}
 .look-chip.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);font-weight:700}
+.font-chip{padding:5px 14px}
 .look-dot{display:block;width:18px;height:18px;border-radius:50%;border:1px solid var(--ink)}
 /* Seating chart */
 .seats{gap:6px}
@@ -524,11 +527,22 @@ const TYPES={
 /* Fill in missing fields so saved or imported data is safe to render. */
 /* Colors: a main color and an accent color, chosen separately. The values live in the CSS under data-main and data-accent. */
 const MAINS=[['navy','Navy','#0a3ca3'],['graphite','Graphite','#18212e'],['forest','Forest','#055528'],['plum','Plum','#5e1a9e']],ACCENTS=[['gold','Gold','#ffc400'],['orange','Orange','#ff7a00'],['sky','Sky','#4fc3ff'],['mint','Mint','#4ddc9b'],['lime','Lime','#b8e62e']];
+/* Font choices: [key, name, CSS stack, stylesheet]. Source Sans 3 is the default and is always loaded. The others
+   load only when someone picks them (or opens the font menu to preview them). */
+const FONTS=[['source','Source Sans 3',"'Source Sans 3','Segoe UI',system-ui,sans-serif",null],
+  ['lexend','Lexend',"'Lexend','Segoe UI',system-ui,sans-serif",'https://fonts.googleapis.com/css2?family=Lexend:wght@500..700&display=swap'],
+  ['atkinson','Atkinson Hyperlegible',"'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif",'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap']];
+function loadFont(k){
+  const f=FONTS.find(x=>x[0]===k);
+  if(!f||!f[3]||document.querySelector('link[data-font="'+k+'"]'))return;
+  const l=document.createElement('link');l.rel='stylesheet';l.href=f[3];l.dataset.font=k;document.head.append(l);
+}
 const pickOf=(list,k)=>list.find(x=>x[0]===k)||list[0];
-function applyLook(){document.documentElement.dataset.main=pickOf(MAINS,S.main)[0];document.documentElement.dataset.accent=pickOf(ACCENTS,S.accent)[0];}
+function applyLook(){document.documentElement.dataset.main=pickOf(MAINS,S.main)[0];document.documentElement.dataset.accent=pickOf(ACCENTS,S.accent)[0];const f=pickOf(FONTS,S.font)[0];document.documentElement.dataset.font=f;loadFont(f);}
 function normalize(D){
   if(!MAINS.some(m=>m[0]===D.main)) D.main='navy';
   if(!ACCENTS.some(m=>m[0]===D.accent)) D.accent='gold';
+  if(!FONTS.some(m=>m[0]===D.font)) D.font='source';
   if(!Array.isArray(D.classes)) D.classes=[];
   if(!Array.isArray(D.templates)) D.templates=[];
   D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
@@ -618,7 +632,7 @@ const b64ToBlob=(b64,type)=>{const bin=atob(b64),u=new Uint8Array(bin.length);fo
 /* ---------- Undo ---------- */
 /* Every saved change becomes a snapshot. Image data is kept once in IMG and referenced by id, so
    snapshots stay small. Switching screens, the floating window view, and backup dates are not undoable. */
-const UNDO_MAX=40,NO_UNDO=['active','floatMode','lastBackup','since','main','accent'],IMG=new Map(),IMGK=new Map();
+const UNDO_MAX=40,NO_UNDO=['active','floatMode','lastBackup','since','main','accent','font'],IMG=new Map(),IMGK=new Map();
 let hist=[];
 function snap(){
   return JSON.stringify(S,function(k,v){
@@ -2275,7 +2289,7 @@ function gearPop(anchor){
   openPop(anchor,box=>{
     box.classList.add('menu');
     box.append(h('h3',null,'Settings'),
-      h('button',{class:'opt',type:'button',onclick:then(lookPop)},'Colors',h('small',null,pickOf(MAINS,S.main)[1]+' and '+pickOf(ACCENTS,S.accent)[1].toLowerCase())),
+      h('button',{class:'opt',type:'button',onclick:then(lookPop)},'Colors and font',h('small',null,pickOf(MAINS,S.main)[1]+' and '+pickOf(ACCENTS,S.accent)[1].toLowerCase()+', '+pickOf(FONTS,S.font)[1])),
       h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
       h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
       h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')),
@@ -2287,7 +2301,8 @@ function gearPop(anchor){
 /* ---------- Look ---------- */
 function lookPop(anchor){
   openPop(anchor,box=>{
-    box.append(h('h3',null,'Colors'),h('p',{class:'pop-note'},'Pick a main color and an accent color. Dark mode follows your device.'));
+    box.append(h('h3',null,'Colors and font'),h('p',{class:'pop-note'},'Pick a main color, an accent color, and a font. Dark mode follows your device.'));
+    FONTS.forEach(f=>loadFont(f[0]));
     const mk=(title,list,field)=>{
       const row=h('div',{class:'look-row',role:'group','aria-label':title});
       const draw=()=>row.replaceChildren(...list.map(([k,name,hex])=>{
@@ -2299,6 +2314,12 @@ function lookPop(anchor){
     };
     mk('Main color',MAINS,'main');
     mk('Accent color',ACCENTS,'accent');
+    const frow=h('div',{class:'look-row',role:'group','aria-label':'Font'});
+    const fdraw=()=>frow.replaceChildren(...FONTS.map(([k,name,stack])=>{
+      const on=pickOf(FONTS,S.font)[0]===k;
+      return h('button',{class:'look-chip font-chip'+(on?' on':''),type:'button','aria-pressed':String(on),style:'font-family:'+stack,onclick:()=>{S.font=k;applyLook();save();fdraw();}},name);
+    }));
+    fdraw();box.append(h('h3',null,'Font'),frow);
   });
 }
 

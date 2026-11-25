@@ -52,7 +52,7 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Document camera.** Live video from a USB document camera, this computer's camera, or an iPhone through Continuity Camera, with Freeze, Mirror, and Upside down. Nothing is recorded, and the camera turns off when the widget is minimized or on another screen. Works best from the live site.
 - **Points.** By default the whole class works toward a goal and a reward, with a progress bar. Switch to Teams for named team scores.
 - **Dice.** Roll 1 to 6 dice with 4 to 20 sides, with a total.
-- **Colors.** Settings, then **Colors**, picks a main color (Navy, Graphite, Forest, or Plum) and an accent color (Gold, Orange, Sky, Mint, or Lime) separately. Navy and Gold is the default. The board's tint follows the main color; there is no separate background setting. Every combination keeps text at 7:1 contrast, in light and dark mode. Dark mode follows your device.
+- **Colors and font.** Settings, then **Colors and font**, picks a font and a main color (Navy, Graphite, Forest, or Plum) and an accent color (Gold, Orange, Sky, Mint, or Lime) separately. Navy and Gold is the default. The board's tint follows the main color; there is no separate background setting. Every combination keeps text at 7:1 contrast, in light and dark mode. Dark mode follows your device.
 - **Calm mode** turns off sound, motion, and music, and always keeps a clock on screen.
 - **Board name.** Click "Classboard" in the top left to rename it, for example "Room 204."
 
@@ -60,7 +60,7 @@ To move to a new computer: Download backup on the old one, then Import backup on
 
 These come from research on classroom displays and executive functioning, and the app follows them by default:
 
-- One font, Source Sans 3, at weights 500 to 700 only.
+- One font at a time. Source Sans 3 at weights 500 to 700 is the default. Settings, then **Colors and font**, also offers Lexend and Atkinson Hyperlegible. They download only when chosen. Research does not show any one font is best, so it is a personal setting.
 - Text and accent colors meet 7:1 contrast, because projectors wash colors out.
 - Color is never the only signal; it is paired with a change in weight.
 - No red, including confirm buttons, which turn solid ink and change their wording. No flashing. The timer is silent by default.
