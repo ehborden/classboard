@@ -54,3 +54,39 @@ test('duplicating a screen keeps seating chart assignments', async ({ page }) =>
   await expect(page.locator('.tab.on')).toHaveText('Screen 1 copy');
   await expect(page.locator('.seat-chair .seat-name')).toHaveText('Maya R');
 });
+
+test('high school starters: each one makes a working screen, and there is no separate background setting', async ({ page }) => {
+  await openApp(page);
+  await page.click('.tab.add');
+  await expect(page.locator('.pop')).toContainText('High school starters');
+  const names = ['Math class', 'English class', 'Science lab', 'Social studies', 'Group work', 'Test or quiz day', 'Study hall or advisory', 'Seating chart'];
+  for (const n of names) await expect(page.locator('.pop .opt', { hasText: n }).first()).toBeVisible();
+  await page.click('.pop .opt >> text=Science lab');
+  await expect(page.locator('.tab.on')).toHaveText('Science lab');
+  expect((await page.locator('.widget .wlabel').allTextContents()).sort()).toEqual(['Clock', 'Task steps', 'Text box', 'Timer']);
+  await expect(page.locator('.st-txt').first()).toHaveValue('Safety check');
+  // Starting a second screen from the same starter gives every widget its own id.
+  await page.click('.tab.add'); await page.click('.pop .opt >> text=Science lab');
+  const s = await stored(page);
+  const ids = s.screens.flatMap(sc => sc.widgets.map(w => w.id));
+  expect(new Set(ids).size).toBe(ids.length);
+  // The board tint follows the chosen colors; Screen settings has no Background choice.
+  await page.click('#bGear'); await page.click('.pop >> text=Screen settings');
+  await expect(page.locator('.pop')).not.toContainText('Background');
+});
+
+test('every starter fits on screen without widgets overlapping', async ({ page }) => {
+  await openApp(page);
+  const names = ['Math class', 'English class', 'Science lab', 'Social studies', 'Group work', 'Test or quiz day', 'Study hall or advisory', 'Seating chart'];
+  for (const n of names) {
+    await page.click('.tab.add');
+    await page.click('.pop .opt >> text=' + n);
+    const boxes = await page.$$eval('.widget', ws => ws.map(w => { const r = w.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }));
+    const board = await page.$eval('#board', b => { const r = b.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    for (const b of boxes) { expect(b[0]).toBeGreaterThanOrEqual(board[0] - 1); expect(b[2]).toBeLessThanOrEqual(board[2] + 1); expect(b[3]).toBeLessThanOrEqual(board[3] + 1); }
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], c = boxes[j];
+      expect(a[0] < c[2] - 1 && c[0] < a[2] - 1 && a[1] < c[3] - 1 && c[1] < a[3] - 1, n + ' widgets ' + i + ' and ' + j + ' overlap').toBe(false);
+    }
+  }
+});

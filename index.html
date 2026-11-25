@@ -86,15 +86,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .sel{border:1px solid var(--line);background:var(--panel);border-radius:var(--r-ctl);padding:5px 8px;max-width:100%}
 
 /* Board */
-.board{position:relative;flex:1;min-height:320px;border-radius:20px;overflow:hidden;border:1px solid var(--edge)}
-.bg-mist{background:var(--mist)}
-.bg-sky{background:#cfe3ff}
-.bg-sage{background:#cdeedb}
-.bg-blush{background:#fddbe3}
-.bg-slate{background:#3a4757}
-.bg-night{background:#10161d}
-.empty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;color:var(--ink)}
-.bg-slate .empty,.bg-night .empty{color:#e8eef4}
+.board{background:var(--mist);position:relative;flex:1;min-height:320px;border-radius:20px;overflow:hidden;border:1px solid var(--edge)}
 .empty p{margin:0}
 
 /* Widget frame */
@@ -290,7 +282,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pk-chips{display:flex;flex-wrap:wrap;gap:6px}
 
 /* Popovers, modal, toasts */
-.pop{position:fixed;z-index:1000;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;width:max-content;min-width:230px;max-width:min(340px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}
+.pop{max-height:calc(100vh - 16px);overflow-y:auto;position:fixed;z-index:1000;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;width:max-content;min-width:230px;max-width:min(340px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px}
 .pop h3{margin:0;font:600 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .pop .opt{display:flex;flex-direction:column;align-items:flex-start;border:1px solid transparent;background:transparent;border-radius:8px;padding:7px 9px;cursor:pointer;text-align:left;width:100%}
 .pop .opt:hover{background:var(--panel2)}
@@ -434,7 +426,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <button class="btn icon" id="bGear" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
-<main class="board bg-mist" id="board"></main>
+<main class="board" id="board"></main>
 <div class="pbar" id="pbar">
   <button class="btn" id="pPrev" type="button" aria-label="Previous screen">Prev</button>
   <span id="pName"></span>
@@ -488,7 +480,7 @@ function guideWidgets(html,items){
 }
 function seed(){
   const cls={id:uid(),name:'Sample class',students:['Ada','Ben','Chloe','Dev','Elena','Femi','Grace','Hiro','Isla','Jamal'],absent:[]};
-  const sc={id:uid(),name:'Screen 1',bg:'mist',widgets:guideWidgets('<b>Warm up</b><br>Solve the first problem on your own. Then compare with a partner.',[
+  const sc={id:uid(),name:'Screen 1',widgets:guideWidgets('<b>Warm up</b><br>Solve the first problem on your own. Then compare with a partner.',[
     {id:uid(),txt:'Warm up',done:false},
     {id:uid(),txt:'Mini lesson',done:false},
     {id:uid(),txt:'Practice',done:false},
@@ -525,7 +517,7 @@ function normalize(D){
   if(!Array.isArray(D.classes)) D.classes=[];
   if(!Array.isArray(D.templates)) D.templates=[];
   D.classes.forEach(c=>{c.students=c.students||[];c.absent=c.absent||[];});
-  D.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);s.bg=s.bg||'mist';});
+  D.screens.forEach(s=>{s.widgets=(s.widgets||[]).filter(w=>TYPES[w.type]);});
   /* Saved fields win; any field a widget is missing (from an older version) gets its default. */
   const fill=w=>{w.data=Object.assign(TYPES[w.type].data(),w.data&&typeof w.data==='object'?w.data:{});};
   D.screens.forEach(s=>s.widgets.forEach(fill));
@@ -708,7 +700,7 @@ function renderBoard(){
   cleanups.forEach(f=>{try{f();}catch(e){}});
   ticks=[];classHooks=[];cleanups=[];
   const sc=cur();
-  boardEl.className='board bg-'+sc.bg;
+  boardEl.className='board';
   boardEl.replaceChildren();
   [...sc.widgets].sort((a,b)=>a.y-b.y||a.x-b.x).forEach(w=>boardEl.append(renderWidget(w)));
   /* Calm mode always keeps the time on the board. */
@@ -2226,19 +2218,8 @@ function screenPop(anchor){
     const sc=cur();
     const name=h('input',{class:'fld',id:'scName',value:sc.name,'aria-label':'Screen name'});
     name.addEventListener('input',()=>{sc.name=name.value;save();renderTabs();});
-    const bgs=[['mist','Default','var(--mist)'],['sky','Sky','#cfe3ff'],['sage','Sage','#cdeedb'],['blush','Blush','#fddbe3'],['slate','Slate','#3a4757'],['night','Night','#10161d']];
-    const sws=h('div',{class:'swatches'},bgs.map(([k,l,c])=>{
-      const b=h('button',{class:'sw'+(sc.bg===k?' on':''),type:'button',title:l,'aria-label':'Background '+l,'aria-pressed':String(sc.bg===k)});
-      b.style.background=c;
-      b.addEventListener('click',()=>{
-        sc.bg=k;boardEl.className='board bg-'+k;save();
-        sws.querySelectorAll('.sw').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false');});
-        b.classList.add('on');b.setAttribute('aria-pressed','true');
-      });
-      return b;
-    }));
     const dup=h('button',{class:'btn',type:'button',onclick:()=>{
-      const c={id:uid(),name:(sc.name||'Screen')+' copy',bg:sc.bg,widgets:cloneWidgets(sc.widgets)};
+      const c={id:uid(),name:(sc.name||'Screen')+' copy',widgets:cloneWidgets(sc.widgets)};
       S.screens.splice(S.screens.indexOf(sc)+1,0,c);closePop();switchTo(c.id);
     }},'Duplicate screen');
     const tpl=h('button',{class:'btn',type:'button',onclick:()=>saveTemplatePop(anchor,sc)},'Save as template');
@@ -2260,7 +2241,7 @@ function screenPop(anchor){
       sc.widgets=ws;save();closePop();renderBoard();
       toast('This screen now uses the default layout.');
     },'Replace this layout?');
-    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Background'),sws,h('h3',null,'Layout'),lay,tpl,dup,del);
+    box.append(h('h3',null,'Screen name'),name,h('h3',null,'Layout'),lay,tpl,dup,del);
     setTimeout(()=>name.select(),0);
   });
 }
@@ -2485,14 +2466,57 @@ async function floatClock(){
 }
 
 /* ---------- Templates ---------- */
-/* A template is a saved copy of a screen: its background, widgets, and their contents.
+/* A template is a saved copy of a screen: its widgets, and their contents.
    Widget ids are renewed on each use; ids inside a widget (agenda rows, chairs) stay, since
    they only need to be unique within that widget and seat assignments point at chair ids. */
 function cloneWidgets(ws){return JSON.parse(JSON.stringify(ws)).map(x=>{x.id=uid();return x;});}
+/* Built-in starter screens for high school classes. They are made fresh each time the menu opens, so
+   agenda rows and steps get their own ids. Teachers edit the words; nothing here is saved until they use one. */
+function starterTemplates(){
+  const rows=(...t)=>t.map(txt=>({id:uid(),txt,done:false}));
+  const W=(type,x,y,w,hh,over)=>({id:uid(),type,x,y,w,h:hh,z:1,data:Object.assign(TYPES[type].data(),over||{})});
+  const set=ws=>ws.map((w,i)=>{w.z=i+1;return w;});
+  return [
+    {name:'Math class',desc:'Agenda, problem of the day, timer, clock',widgets:set([
+      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Warm up','Notes and examples','Practice problems','Exit ticket')}),
+      W('text',.255,.02,.47,.95,{html:'<b>Problem of the day</b><br>Write the problem here.',fs:44}),
+      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
+    {name:'English class',desc:'Agenda, prompt, names, timer',widgets:set([
+      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Silent reading','Mini lesson','Discussion','Writing','Share out')}),
+      W('text',.255,.02,.47,.6,{html:'<b>Prompt</b><br>Write today\'s question or quote here.',fs:40}),
+      W('picker',.255,.64,.47,.33),
+      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
+    {name:'Science lab',desc:'Question, lab steps, timer, clock',widgets:set([
+      W('text',.02,.02,.5,.24,{html:'<b>Today\'s question</b><br>Write the question for the lab here.',fs:34}),
+      W('steps',.02,.29,.5,.68,{title:'Lab steps',items:rows('Safety check','Set up','Run the procedure','Record data','Clean up')}),
+      W('timer',.55,.02,.43,.58,{dur:900}),W('clock',.55,.64,.43,.33)])},
+    {name:'Social studies',desc:'Agenda, essential question, key terms',widgets:set([
+      W('agenda',.02,.02,.22,.95,{title:'Today',items:rows('Hook','Notes','Source analysis','Discussion','Exit ticket')}),
+      W('text',.255,.02,.47,.5,{html:'<b>Essential question</b><br>Write the question here.',fs:40}),
+      W('text',.255,.56,.47,.41,{html:'<b>Key terms</b><br>',fs:30}),
+      W('clock',.77,.03,.22,.27),W('timer',.745,.34,.25,.63,{dur:600})])},
+    {name:'Group work',desc:'Task, groups, group steps, timer',widgets:set([
+      W('text',.02,.02,.6,.22,{html:'<b>Task</b><br>Write the group task here.',fs:32}),
+      W('picker',.02,.27,.6,.7,{mode:'groups',size:4}),
+      W('timer',.65,.02,.33,.44,{dur:900}),
+      W('steps',.65,.5,.33,.47,{title:'Group steps',items:rows('Read the task','Choose roles','Work together','Share out')})])},
+    {name:'Test or quiz day',desc:'Rules, finish checklist, long timer',widgets:set([
+      W('text',.02,.02,.55,.45,{html:'<b>Test day</b><br>Phones away.<br>Eyes on your own work.<br>Raise your hand if you have a question.',fs:36}),
+      W('steps',.02,.5,.55,.47,{title:'Before you turn it in',items:rows('Name on every page','Answer every question','Check your work','Raise your hand when done')}),
+      W('timer',.6,.02,.38,.6,{dur:2400}),W('clock',.6,.66,.38,.31)])},
+    {name:'Study hall or advisory',desc:'Big clock, plan for the period, timer',widgets:set([
+      W('clock',.02,.02,.4,.4),
+      W('text',.02,.46,.4,.51,{html:'<b>Today</b><br>Write announcements or goals here.',fs:30}),
+      W('agenda',.45,.02,.53,.45,{title:'This period',items:rows('Check in','Work time','Wrap up')}),
+      W('timer',.45,.5,.53,.47,{dur:1800})])},
+    {name:'Seating chart',desc:'A full-screen room with your class',widgets:set([
+      W('seats',.02,.02,.96,.96)])}
+  ];
+}
 /* from is a template, 'blank', or nothing for the default layout. */
 function newScreen(from){
   const t=from&&typeof from==='object'?from:null;
-  const sc={id:uid(),name:t?t.name:'Screen '+(S.screens.length+1),bg:t?t.bg:cur().bg,
+  const sc={id:uid(),name:t?t.name:'Screen '+(S.screens.length+1),
     widgets:t?cloneWidgets(t.widgets):from==='blank'?[]:guideWidgets()};
   S.screens.push(sc);switchTo(sc.id);
 }
@@ -2504,6 +2528,8 @@ function newScreenPop(anchor){
       h('h3',null,'Your templates'),
       ...(S.templates.length?S.templates.map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.widgets.length+(t.widgets.length===1?' widget':' widgets')))):
         [h('p',null,'None yet. Set up a screen the way you like it, then save it here.')]),
+      h('h3',null,'High school starters'),
+      ...starterTemplates().map(t=>h('button',{class:'opt',type:'button',onclick:()=>{closePop();newScreen(t);}},t.name,h('small',null,t.desc))),
       h('button',{class:'btn',type:'button',onclick:()=>saveTemplatePop(anchor,cur())},'Save this screen as a template'));
   });
 }
@@ -2513,7 +2539,7 @@ function saveTemplatePop(anchor,sc){
     const nm=h('input',{class:'fld',value:sc.name||'','aria-label':'Template name',placeholder:'Template name, like Warm up'});
     const go=()=>{
       const name=nm.value.trim()||'Template';
-      const t={id:uid(),name,bg:sc.bg,widgets:cloneWidgets(sc.widgets)};
+      const t={id:uid(),name,widgets:cloneWidgets(sc.widgets)};
       const old=S.templates.findIndex(x=>x.name.toLowerCase()===name.toLowerCase());
       if(old>=0)S.templates[old]=t;else S.templates.push(t);
       save();closePop();

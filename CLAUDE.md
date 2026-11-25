@@ -41,7 +41,7 @@ Grep `index.html` for an em dash before committing; the count must be 0.
 
 **Pen marks.** The board pen (`pen`, `setPen`) is never saved. PDF marks are stored per page as strokes in `w.data.pdf.marks`, only when the teacher clicks Keep; until then they live in `PDFMEM`. Both draw through `drawStrokes`, with points stored as fractions of the drawing area.
 
-**Templates.** `S.templates` holds saved screens with their widget contents. `cloneWidgets` renews widget ids only; ids inside a widget stay, because seat assignments point at chair ids.
+**Templates.** `S.templates` holds saved screens with their widget contents. `starterTemplates()` builds the built-in high school screens fresh each time the New screen menu opens; they are never stored. The board tint comes from the `--mist` color token, so there is no per-screen background; old saved `bg` fields are ignored. `cloneWidgets` renews widget ids only; ids inside a widget stay, because seat assignments point at chair ids.
 
 **Seating chart.** Furniture (`D.items`, tables and chairs placed by fraction of the canvas) is shared by every class. Assignments are per class: `D.seats[classId] = {chairId: name}`. Two steps: set up room, then seat students.
 
