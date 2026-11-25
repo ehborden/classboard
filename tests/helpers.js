@@ -12,6 +12,8 @@ const NM = path.resolve(__dirname, '..', 'node_modules');
 const CDN = [
   [/cdnjs\.cloudflare\.com\/ajax\/libs\/xlsx\/0\.18\.5\/(.*)$/, 'xlsx/dist/'],
   [/cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js\/3\.11\.174\/(.*)$/, 'pdfjs-dist/build/'],
+  [/cdnjs\.cloudflare\.com\/ajax\/libs\/html2canvas\/1\.4\.1\/html2canvas\.min\.js$/, 'html2canvas/dist/', 'html2canvas.min.js'],
+  [/cdnjs\.cloudflare\.com\/ajax\/libs\/jspdf\/2\.5\.1\/jspdf\.umd\.min\.js$/, 'jspdf/dist/', 'jspdf.umd.min.js'],
   [/cdn\.jsdelivr\.net\/npm\/tesseract\.js@5\.1\.1\/dist\/(.*)$/, 'tesseract.js/dist/'],
   [/cdn\.jsdelivr\.net\/npm\/tesseract\.js-core@5\.1\.1\/(.*)$/, 'tesseract.js-core/'],
   [/cdn\.jsdelivr\.net\/npm\/@tesseract\.js-data\/eng@1\.0\.0\/(.*)$/, '@tesseract.js-data/eng/'],
@@ -21,9 +23,9 @@ const TYPES = { '.js': 'application/javascript', '.wasm': 'application/wasm' };
 async function serveLibs(context) {
   await context.route(/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net/, route => {
     const url = route.request().url();
-    for (const [re, dir] of CDN) {
+    for (const [re, dir, fixed] of CDN) {
       const m = url.match(re);
-      const file = m && path.join(NM, dir, m[1]);
+      const file = m && path.join(NM, dir, fixed || m[1]);
       if (file && fs.existsSync(file)) {
         return route.fulfill({
           path: file,

@@ -8,6 +8,8 @@
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@tesseract.js-data/eng": "1.0.0",
+    "html2canvas": "1.4.1",
+    "jspdf": "2.5.1",
     "pdfjs-dist": "3.11.174",
     "tesseract.js": "5.1.1",
     "tesseract.js-core": "5.1.1",

@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, stored, addScreen } = require('./helpers');
+const { openApp, stored, addScreen, board, widget } = require('./helpers');
+const fs = require('fs');
 
 const inked = page => page.evaluate(() => {
   const c = document.querySelector('.pen-layer'); if (!c) return 0;
@@ -55,4 +56,33 @@ test('highlighter has its own colors, and the ink colors come back for the pen',
   await expect(page.locator('.pen-bar [aria-label="Green highlighter"]')).toHaveAttribute('aria-pressed', 'true');
   await page.click('.pen-bar >> text=Pen');
   await expect(page.locator('.pen-bar [aria-label="blue ink"]')).toBeVisible();
+});
+
+test('Save as PDF downloads the screen with the writing on it', async ({ page }) => {
+  await openApp(page, board([widget('text', { html: '<b>Solve:</b> 3x + 5 = 20', fs: 48 }, [0.05, 0.1, 0.6, 0.5]), widget('timer', { dur: 300 }, [0.7, 0.1, 0.25, 0.6])]));
+  await page.click('#bPen');
+  await page.click('.pen-bar >> text=Highlighter');
+  await page.mouse.move(150, 230); await page.mouse.down(); await page.mouse.move(450, 230, { steps: 8 }); await page.mouse.up();
+  const dl = page.waitForEvent('download', { timeout: 30000 });
+  await page.click('.pen-bar >> text=Save as PDF');
+  const d = await dl;
+  expect(d.suggestedFilename()).toMatch(/^Classboard Screen 1\.pdf$/);
+  const file = await d.path();
+  const bytes = fs.readFileSync(file);
+  expect(bytes.slice(0, 5).toString()).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(8000);
+  fs.mkdirSync('test-results', { recursive: true });
+  fs.copyFileSync(file, 'test-results/saved-screen.pdf');
+  await expect(page.locator('.pen-save')).toBeEnabled();
+});
+
+test('Save as PDF also works on a screen with agenda highlights', async ({ page }) => {
+  await openApp(page, board([widget('agenda', { title: 'Today', items: ['Warm up', 'Practice'].map((t, i) => ({ id: 'a' + i, txt: t, done: i === 0 })) }, [0.05, 0.1, 0.4, 0.7])]));
+  await page.click('#bPen');
+  const dl = page.waitForEvent('download', { timeout: 30000 });
+  await page.click('.pen-bar >> text=Save as PDF');
+  const d = await dl;
+  const fs2 = require('fs'); const f = await d.path();
+  fs2.copyFileSync(f, 'test-results/saved-agenda.pdf');
+  expect(fs2.readFileSync(f).slice(0, 5).toString()).toBe('%PDF-');
 });

@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Rules from the owner
 
-- **Keep it one HTML file with no build step.** All markup, CSS, and JavaScript live in `index.html`. Libraries for importing (SheetJS, pdf.js, Tesseract.js) load lazily from cdnjs or jsdelivr at pinned versions; never bundle them.
+- **Keep it one HTML file with no build step.** All markup, CSS, and JavaScript live in `index.html`. Libraries for importing and saving (SheetJS, pdf.js, Tesseract.js, html2canvas, jsPDF) load lazily from cdnjs or jsdelivr at pinned versions; never bundle them.
 - **Never change the localStorage key `classboard.v1`.** Add new fields to the saved state instead, with defaults filled in by `normalize()`. Kept PDFs are the one exception to localStorage: they live in IndexedDB (`classboard-files`, see `FILES`) and the widget saves only their id.
 - **No em dashes anywhere in UI text.** Use hyphens or rewrite the sentence.
 - **No sync between computers.** Each teacher's setup is meant to be personal. Backup and Import are the only way data moves.
@@ -39,7 +39,7 @@ Grep `index.html` for an em dash before committing; the count must be 0.
 
 **Undo.** `flush()` calls `record()`, which stores a JSON snapshot of `S` whenever it changed. Long `data:` image strings are swapped for ids held once in `IMG`, so snapshots stay small. Consecutive typing in the same field updates one step instead of adding one per pause. Keys in `NO_UNDO` (`active`, `floatMode`, `lastBackup`, `since`) are left out, so switching screens is not an undo step. `undo()` restores the previous snapshot and re-renders.
 
-**Pen marks.** The board pen (`pen`, `setPen`) is never saved. PDF marks are stored per page as strokes in `w.data.pdf.marks`, only when the teacher clicks Keep; until then they live in `PDFMEM`. Both draw through `drawStrokes`, with points stored as fractions of the drawing area.
+**Pen marks.** The board pen (`pen`, `setPen`) is never saved. PDF marks are stored per page as strokes in `w.data.pdf.marks`, only when the teacher clicks Keep; until then they live in `PDFMEM`. Both draw through `drawStrokes`, with points stored as fractions of the drawing area. `savePdf()` renders the board with html2canvas, lays the pen canvas over it, and writes a one-page PDF with jsPDF; `flattenColors()` rewrites `color-mix` colors and inset shadows first, because html2canvas cannot read them.
 
 **Templates.** `S.templates` holds saved screens with their widget contents. `starterTemplates()` builds the built-in starter screens fresh each time the New screen menu opens; they are never stored. The board tint comes from the `--mist` color token, so there is no per-screen background; old saved `bg` fields are ignored. `cloneWidgets` renews widget ids only; ids inside a widget stay, because seat assignments point at chair ids.
 

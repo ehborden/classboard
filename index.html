@@ -342,6 +342,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .pen-sw{width:26px;height:26px}
 .pen-sep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
 .pen-done{padding:5px 14px}
+.pen-save{padding:9px 20px;font-size:15px;font-weight:700;background:var(--sun);border-color:var(--on-sun);color:var(--on-sun)}
+.pen-save:hover:not(:disabled){background:var(--sun);filter:brightness(.95)}
 .pbar span{padding:0 8px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .present .pbar{display:flex}
 /* Back-row sizing for a room up to 20 feet deep, on a 1080-pixel-tall projected image:
@@ -1900,6 +1902,8 @@ const LIBS={
   xlsx:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   pdfWorker:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  h2c:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  jspdf:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   ocr:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
   ocrWorker:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
   ocrCore:'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
@@ -2641,6 +2645,51 @@ function drawStrokes(g,strokes,W,H){
   g.globalAlpha=1;g.globalCompositeOperation='source-over';
 }
 function clearPen(){pen.strokes=[];penDraw();}
+/* Save the current screen, with any writing on it, as a one-page PDF. The page is the board's own shape, so
+   nothing is cropped. The helpers load only when this is used. Slides, documents, and the camera are
+   embedded frames the browser will not let a page copy, so they come out blank. */
+function flattenColors(doc){
+  const cv=document.createElement('canvas');cv.width=cv.height=1;
+  const cx=cv.getContext('2d',{willReadFrequently:true});
+  const rgba=v=>{cx.clearRect(0,0,1,1);cx.fillStyle='#000';cx.fillStyle=v;cx.fillRect(0,0,1,1);const d=cx.getImageData(0,0,1,1).data;return 'rgba('+d[0]+','+d[1]+','+d[2]+','+(d[3]/255).toFixed(3)+')';};
+  const props=['backgroundColor','color','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','outlineColor','textDecorationColor'];
+  const win=doc.defaultView;
+  doc.querySelectorAll('*').forEach(el=>{
+    const cs=win.getComputedStyle(el);
+    props.forEach(p=>{const v=cs[p];if(v&&v.startsWith('color('))el.style[p]=rgba(v);});
+    /* The PDF helper cannot draw inset shadows, so turn the two we use into a border ring or a left bar. */
+    const bs=cs.boxShadow;
+    if(bs&&bs!=='none'&&/inset/.test(bs)){
+      const col=(bs.match(/(rgba?\([^)]*\)|color\([^)]*\))/)||[])[1],nums=(bs.replace(/(rgba?|color)\([^)]*\)/,'').match(/-?\d+(\.\d+)?px/g)||[]).map(parseFloat);
+      el.style.boxShadow='none';
+      if(col){
+        const c=col.startsWith('color(')?rgba(col):col,[x=0,y=0,blur=0,spread=0]=nums;
+        if(x>0&&!blur&&!spread)el.style.backgroundImage='linear-gradient(to right,'+c+' 0,'+c+' '+x+'px,transparent '+x+'px)';
+        else if(!x&&!y&&spread>0)el.style.borderColor=c;
+      }
+    }else if(bs&&bs.includes('color('))el.style.boxShadow='none';
+  });
+}
+async function savePdf(btn){
+  if(btn.disabled)return;
+  const label=btn.textContent;btn.disabled=true;btn.textContent='Saving...';
+  try{
+    await Promise.all([loadScript(LIBS.h2c),loadScript(LIBS.jspdf)]);
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const shot=await window.html2canvas(boardEl,{scale:2,backgroundColor:null,logging:false,useCORS:true,
+      ignoreElements:el=>!!(el.classList&&(el.classList.contains('resize')||el.classList.contains('full-exit'))),
+      onclone:flattenColors});
+    if(pen.canvas&&pen.strokes.length)shot.getContext('2d').drawImage(pen.canvas,0,0,shot.width,shot.height);
+    const pw=792,ph=pw*shot.height/shot.width;
+    const pdf=new window.jspdf.jsPDF({orientation:pw>=ph?'landscape':'portrait',unit:'pt',format:[pw,ph]});
+    pdf.addImage(shot.toDataURL('image/jpeg',.92),'JPEG',0,0,pw,ph);
+    const clean=t=>String(t||'').replace(/[\\/:*?"<>|_]+/g,' ').replace(/\s+/g,' ').trim();
+    const name=(clean(S.title)||'Classboard')+' '+(clean(cur().name)||'Screen')+'.pdf';
+    pdf.save(name);
+    toast('Saved '+name+' to your downloads.');
+  }catch(e){toast(e&&e.message?e.message:'Could not make the PDF.');}
+  finally{btn.disabled=false;btn.textContent=label;}
+}
 function penBar(){
   const tool=(k,l)=>h('button',{class:'chip'+(pen.tool===k?' on':''),type:'button','aria-pressed':String(pen.tool===k),onclick:()=>{pen.tool=k;penBar();}},l);
   const bar=pen.bar||(pen.bar=h('div',{class:'pen-bar',role:'toolbar','aria-label':'Pen'}));
@@ -2654,6 +2703,7 @@ function penBar(){
     h('span',{class:'pen-sep'}),
     h('button',{class:'chip',type:'button',onclick:()=>{pen.strokes.pop();penDraw();}},'Undo'),
     h('button',{class:'chip',type:'button',onclick:clearPen},'Clear'),
+    h('button',{class:'btn pen-save',type:'button',title:'Save this screen, with your writing, as a PDF',onclick:e=>savePdf(e.currentTarget)},'Save as PDF'),
     h('button',{class:'btn primary pen-done',type:'button',onclick:()=>setPen(false)},'Done'));
   if(!bar.isConnected)document.body.append(bar);
   bar.hidden=!pen.on;
