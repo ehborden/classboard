@@ -2290,7 +2290,7 @@ function gearPop(anchor){
     box.classList.add('menu');
     box.append(h('h3',null,'Settings'),
       h('button',{class:'opt',type:'button',onclick:then(lookPop)},'Colors and font',h('small',null,pickOf(MAINS,S.main)[1]+' and '+pickOf(ACCENTS,S.accent)[1].toLowerCase()+', '+pickOf(FONTS,S.font)[1])),
-      h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, background, duplicate, delete')),
+      h('button',{class:'opt',type:'button',onclick:then(screenPop)},'Screen settings',h('small',null,'Name, layout, duplicate, delete')),
       h('button',{class:'opt',type:'button',onclick:then(()=>openClasses())},'Classes',h('small',null,'Class lists for the name picker')),
       h('button',{class:'opt',type:'button',onclick:then(backupPop)},'Backup',h('small',null,'Download or import your boards')),
       h('button',{class:'opt',type:'button',onclick:then(templatesPop)},'Templates',h('small',null,S.templates.length?'Rename or delete saved screens':'Save a screen from Screen settings first')),
@@ -2528,8 +2528,8 @@ function starterTemplates(){
       W('clock',.77,.03,.21,.27),W('timer',.755,.34,.235,.63,{dur:300})])},
     {name:'Seats and warm up',desc:'Seating chart, warm up, timer, clock',widgets:set([
       W('seats',.02,.02,.55,.96),
-      W('text',.59,.02,.39,.25,{html:'<b>Warm up</b><br>Write the warm up here.',fs:30}),
-      W('timer',.59,.3,.39,.5,{dur:300}),W('clock',.59,.83,.39,.15)])},
+      W('text',.59,.02,.39,.22,{html:'<b>Warm up</b><br>Write the warm up here.',fs:30}),
+      W('timer',.59,.27,.39,.38,{dur:300,view:'bar'}),W('clock',.59,.68,.39,.3)])},
     {name:'Work time',desc:'Big timer, directions, agenda, clock',widgets:set([
       W('text',.02,.02,.36,.5,{html:'<b>Directions</b><br>Write what to do during work time.',fs:30}),
       W('agenda',.02,.56,.36,.41,{title:'Work time',items:rows('Read the directions','Work on your own','Check your work')}),
