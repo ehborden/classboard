@@ -39,11 +39,11 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Templates.** Screen settings, then **Save as template**, keeps a screen with its widgets and their contents. **+** asks whether to start from the default layout, a blank screen, or one of your templates, and can save the current screen as a template. Rename or delete templates from the gear menu.
 - **Present** goes full screen and hides the controls. Arrow keys switch screens, Esc exits. The bar at the bottom has Prev, Next, Pen, Calm, and Exit.
 - **Pen.** Draw anywhere on the board, over any widget, with a pen, highlighter, or eraser. It is scratch paper: nothing is saved, and marks clear with Clear, a screen switch, or a reload. A stylus draws with pressure.
-- **Agenda.** No times. The first unchecked item is the current one: bold and teal, with everything else in gray. Drag the handle to reorder. In Present mode it shows the current item and the next two.
+- **Agenda.** No times. The first unchecked item is the current one: bold, with a soft accent-color highlight and a thin bar on its left edge. Everything else is gray. Drag the handle to reorder. In Present mode it shows the current item and the next two.
 - **Timer.** A dial that empties as time runs out. Silent unless you turn on **Bell**. **−1 min** and **+1 min** sit right under the dial and change the time left without stopping a running timer. Presets of 1, 3, 5, and 10 minutes, or type a time like `7` or `2:30`.
 - **Float clock.** A small always-on-top window with the clock and timer, so they stay visible over PowerPoint. Flip between the full timer and a small clock. Works in Chrome and Edge, not Safari.
-- **Task steps.** Up to five steps. The current step is bold and teal.
-- **Seating chart.** Step 1, set up the room: start from rows of desks or table groups, then move pieces to match. Step 2, seat students by dragging names or clicking a name and then a chair. Each class keeps its own seats in the same room.
+- **Task steps.** Up to five steps. The current step gets the same bold, accent-highlighted look.
+- **Seating chart.** Step 1, set up the room: start from rows of desks or table groups, then move pieces to match. Step 2, seat students by dragging names or clicking a name and then a chair. Each class keeps its own seats in the same room. **+ Add a class** is right there in step 2.
 - **Names and groups.** Pick a name, make partners, or make groups, skipping absent students.
 - **Classes.** Add students one at a time, paste a list, or **Import from a file or photo**: CSV, Excel, PDF, or a picture or screenshot of a roster. Photos and scanned PDFs are read inside your browser, so names never leave the computer. Everything goes to a review box first, where you choose full names, first name and last initial, or first names only.
 - **Slides.** Show a PowerPoint from OneDrive on the board, with PowerPoint's own next and back controls. In OneDrive, click **Share**, set the link to **Anyone** and **Can view**, then copy the link (or use File, then Share, then Embed, and copy that code) and paste it into the widget. Without the Anyone setting, the file usually will not show. If Anyone is not offered, the school has turned it off, and IT has to allow it. A .pptx file cannot be opened directly in a browser.
@@ -51,6 +51,7 @@ To move to a new computer: Download backup on the old one, then Import backup on
 - **Document camera.** Live video from a USB document camera, this computer's camera, or an iPhone through Continuity Camera, with Freeze, Mirror, and Upside down. Nothing is recorded, and the camera turns off when the widget is minimized or on another screen. Works best from the live site.
 - **Points.** By default the whole class works toward a goal and a reward, with a progress bar. Switch to Teams for named team scores.
 - **Dice.** Roll 1 to 6 dice with 4 to 20 sides, with a total.
+- **Colors.** Settings, then **Colors**, picks a main color (Navy, Graphite, Forest, or Plum) and an accent color (Gold, Orange, Sky, Mint, or Lime) separately. Navy and Gold is the default. Every combination keeps text at 7:1 contrast, in light and dark mode. Dark mode follows your device.
 - **Calm mode** turns off sound, motion, and music, and always keeps a clock on screen.
 - **Board name.** Click "Classboard" in the top left to rename it, for example "Room 204."
 
