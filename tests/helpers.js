@@ -21,6 +21,9 @@ const CDN = [
 const TYPES = { '.js': 'application/javascript', '.wasm': 'application/wasm' };
 
 async function serveLibs(context) {
+  // Google Fonts cannot be reached from the tests, so refuse those requests right away instead of letting them wait.
+  // The app falls back to system fonts, which is all these tests need.
+  await context.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/, route => route.abort());
   await context.route(/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net/, route => {
     const url = route.request().url();
     for (const [re, dir, fixed] of CDN) {

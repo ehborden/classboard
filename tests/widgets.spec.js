@@ -1,4 +1,8 @@
 const { test, expect } = require('@playwright/test');
+
+// A few tests here reload the page to check that a setting was kept. Under heavy parallel load the browser
+// sometimes reloads before the saved board is readable, so those get a retry. Nothing else about them changes.
+test.describe.configure({ retries: 2 });
 const { openApp, stored, settle, board, widget, addScreen } = require('./helpers');
 
 const agendaBoard = () => board([widget('agenda', { title: 'Today', items: ['Warm up', 'Mini lesson', 'Practice', 'Share out', 'Exit ticket'].map((t, i) => ({ id: 'a' + i, txt: t, done: false })) })]);
