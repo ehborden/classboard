@@ -239,8 +239,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ag-row{display:grid;grid-template-columns:14px 24px minmax(0,1fr) auto;align-items:center;gap:4px;padding:3px 4px;border-radius:8px}
 /* One static accent: the current row is bold on an accent highlight. Every other row is normal weight and gray (still 7:1). */
 .ag-row .ag-txt{color:var(--muted)}
-.ag-row.now{background:var(--sun)}
-.ag-row.now .ag-txt{font-weight:700;color:var(--on-sun)}
+.ag-row.now{background:color-mix(in srgb,var(--sun) 30%,transparent);box-shadow:inset 3px 0 0 var(--sun)}
+.ag-row.now .ag-txt{font-weight:700;color:var(--ink)}
 .ag-grip{cursor:grab;color:var(--muted);text-align:center;user-select:none;touch-action:none;font-size:16px;line-height:1}
 .ag-row.drag{background:var(--panel2);box-shadow:var(--shadow)}
 .present .ag-row.out{display:none}
@@ -260,8 +260,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .st-txt{border:0;background:transparent;padding:.15em .25em;border-radius:6px;font-size:inherit;min-width:0;width:100%}
 .st-txt:hover,.st-txt:focus{background:var(--panel2)}
 .st-row .st-txt{color:var(--muted)}
-.st-row.cur{background:var(--sun)}
-.st-row.cur .st-txt,.st-row.cur .st-n{font-weight:700;color:var(--on-sun)}
+.st-row.cur{background:color-mix(in srgb,var(--sun) 30%,transparent);box-shadow:inset 3px 0 0 var(--sun)}
+.st-row.cur .st-txt,.st-row.cur .st-n{font-weight:700;color:var(--ink)}
 .st-row.done .st-txt{text-decoration:line-through;text-decoration-thickness:.08em}
 
 /* Picker */
