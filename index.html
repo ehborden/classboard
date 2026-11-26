@@ -1661,23 +1661,28 @@ function buildSeats(w,body,tools,wel){
     if(step!=='seat'||presenting||e.button>0)return;
     e.preventDefault();e.stopPropagation();
     const sx=e.clientX,sy=e.clientY;let ghost=null;
-    const src=e.currentTarget;src.setPointerCapture(e.pointerId);
+    document.querySelectorAll('.seat-ghost').forEach(g=>g.remove());
+    const src=e.currentTarget,pid=e.pointerId;
+    try{src.setPointerCapture(pid);}catch(_){}
+    /* Listen on the window, not the name: a redraw mid-drag removes the name and would swallow pointerup, leaving a stuck ghost. */
     const mv=ev=>{
+      if(ev.pointerId!==pid)return;
       if(!ghost&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<6)return;
       if(!ghost){ghost=h('div',{class:'seat-ghost'},show(name));document.body.append(ghost);}
       ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';
     };
+    const done=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);if(ghost){ghost.remove();ghost=null;}};
     const up=ev=>{
-      src.removeEventListener('pointermove',mv);src.removeEventListener('pointerup',up);src.removeEventListener('pointercancel',up);
-      if(!ghost){pick=(pick&&pick.name===name)?null:{name,from};draw();return;}
-      ghost.remove();
+      if(ev.pointerId!==pid)return;
+      const moved=!!ghost;done();
+      if(!moved){pick=(pick&&pick.name===name)?null:{name,from};draw();return;}
       if(ev.type==='pointercancel')return;
       const t=document.elementFromPoint(ev.clientX,ev.clientY);
       const chair=t&&t.closest('.seat-chair');
       if(chair&&canvas.contains(chair)) seat(name,chair.dataset.id,from);
       else if(t&&tray.contains(t)) seat(name,null,from);
     };
-    src.addEventListener('pointermove',mv);src.addEventListener('pointerup',up);src.addEventListener('pointercancel',up);
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
   }
   function moveDown(e,it,el,resize){
     if(step!=='room'||presenting||e.button>0||(!resize&&e.target.closest('input,button,.seat-rs')))return;
