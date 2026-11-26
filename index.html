@@ -382,6 +382,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .seat-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .seat-bar .sel{max-width:12em}
 .seat-bar .btn.on{background:var(--sun);border-color:var(--on-sun);color:var(--on-sun);font-weight:700}
+.seat-canvas.multi .seat-x,.seat-canvas.multi .seat-rs,.seat-canvas.multi .seat-around{display:none!important}
+.seat-marquee{position:absolute;z-index:6;border:2px dashed var(--accent);background:var(--accent-soft);opacity:.6;pointer-events:none}
 .seat-hint{color:var(--muted);font-size:13px;min-height:1.2em}
 .seat-canvas{position:relative;flex:1;min-height:0;border:1px solid var(--edge);background:var(--bg);border-radius:10px;container-type:size;overflow:hidden}
 .present .seat-canvas{border-color:transparent}
@@ -1580,7 +1582,7 @@ function buildSteps(w,body,tools){
    Furniture is shared by every class. Each class keeps its own seats in D.seats[classId] = {chairId: name}. */
 function buildSeats(w,body,tools,wel){
   const D=w.data;D.items=D.items||[];D.seats=D.seats||{};
-  let step=D.items.length?'seat':'room',pick=null,selItem=null;
+  let step=D.items.length?'seat':'room',pick=null,sel=new Set();
   let qs={rows:4,cols:6,tables:6,per:4};
   const getClass=()=>S.classes.find(c=>c.id===D.classId)||null;
   const seatMap=()=>{const c=getClass();return c?(D.seats[c.id]||(D.seats[c.id]={})):{};};
@@ -1591,23 +1593,84 @@ function buildSeats(w,body,tools,wel){
   const canvas=h('div',{class:'seat-canvas'});
   const tray=h('div',{class:'seat-tray','aria-label':'Students without a seat'});
   body.append(h('div',{class:'seat-top'},stepsEl,bar),hint,canvas,tray);
-  canvas.addEventListener('pointerdown',e=>{if(e.target===canvas&&selItem){selItem=null;draw();}});
-  wel.addEventListener('keydown',e=>{
-      if(step!=='room'||!selItem||e.target.closest('input'))return;
-      if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeItem(selItem);}
+  /* Pieces picked in step 1. Shift-click adds or removes one; dragging on empty floor draws a box around several. */
+  function markSel(){
+    canvas.classList.toggle('multi',sel.size>1);
+    canvas.querySelectorAll('.seat-item').forEach(x=>x.classList.toggle('on',sel.has(x.dataset.id)));
+  }
+  canvas.addEventListener('pointerdown',e=>{
+    if(e.target!==canvas||step!=='room'||presenting||e.button>0)return;
+    e.preventDefault();
+    const r=canvas.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,pid=e.pointerId,base=new Set(e.shiftKey?sel:[]);
+    let box=null;
+    const mv=ev=>{
+      if(ev.pointerId!==pid)return;
+      if(!box&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
+      if(!box){box=h('div',{class:'seat-marquee'});canvas.append(box);}
+      const x1=Math.min(sx,ev.clientX),x2=Math.max(sx,ev.clientX),y1=Math.min(sy,ev.clientY),y2=Math.max(sy,ev.clientY);
+      box.style.left=(x1-r.left)+'px';box.style.top=(y1-r.top)+'px';box.style.width=(x2-x1)+'px';box.style.height=(y2-y1)+'px';
+      sel=new Set(base);
+      D.items.forEach(it=>{
+        const l=r.left+it.x*r.width,t=r.top+it.y*r.height;
+        if(l<x2&&l+it.w*r.width>x1&&t<y2&&t+it.h*r.height>y1)sel.add(it.id);
+      });
+      markSel();
+    };
+    const up=ev=>{
+      if(ev.pointerId!==pid)return;
+      window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+      if(box)box.remove();
+      else if(!e.shiftKey)sel=new Set();
+      draw();
+    };
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
   });
-  function setStep(st){step=st;pick=null;selItem=null;draw();}
+  wel.addEventListener('keydown',e=>{
+      if(step!=='room'||!sel.size||e.target.closest('input'))return;
+      if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();removeItems([...sel]);}
+  });
+  function setStep(st){step=st;pick=null;sel=new Set();draw();}
   function newItem(kind,x,y,wd,ht,label){return {id:uid(),kind,x,y,w:wd,h:ht,label:label||''};}
   function add(kind){
     const n=D.items.length,big=kind==='table';
     const it=newItem(kind,0,0,big?.2:.08,big?.15:.1);
     it.x=clamp(.06+(n%8)*.04,0,1-it.w);it.y=clamp(.14+(n%8)*.04,0,1-it.h);
-    D.items.push(it);selItem=it.id;save();draw();
+    D.items.push(it);sel=new Set([it.id]);save();draw();
   }
-  function removeItem(id){
-    D.items=D.items.filter(i=>i.id!==id);
-    Object.values(D.seats).forEach(m=>{delete m[id];});
-    selItem=null;save();draw();
+  function removeItems(ids){
+    const gone=new Set(ids);
+    D.items=D.items.filter(i=>!gone.has(i.id));
+    Object.values(D.seats).forEach(m=>{gone.forEach(id=>{delete m[id];});});
+    sel=new Set();save();draw();
+  }
+  /* Tidy into rows: group chairs whose heights line up, level each row, and space the desks evenly.
+     Works on the chairs picked, or on every chair when none are picked. */
+  function tidy(){
+    const picked=D.items.filter(i=>i.kind==='chair'&&sel.has(i.id));
+    const cs=picked.length>1?picked:D.items.filter(i=>i.kind==='chair');
+    if(cs.length<2)return;
+    const med=a=>{const b=[...a].sort((p,q)=>p-q);return b[Math.floor(b.length/2)];};
+    const cw=med(cs.map(c=>c.w)),chh=med(cs.map(c=>c.h));
+    const sorted=[...cs].sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
+    const rows=[];
+    sorted.forEach(c=>{
+      const row=rows[rows.length-1],cy=c.y+c.h/2;
+      if(row&&cy-row.cy<chh*.6){row.list.push(c);row.cy=row.list.reduce((t,q)=>t+q.y+q.h/2,0)/row.list.length;}
+      else rows.push({list:[c],cy});
+    });
+    const widest=Math.max(...rows.map(x=>x.list.length));
+    const left=Math.min(...cs.map(c=>c.x)),right=Math.max(...cs.map(c=>c.x+c.w));
+    const pitch=widest>1?Math.max(cw*1.1,(right-left-cw)/(widest-1)):cw*1.1;
+    let prev=-1;
+    rows.forEach(row=>{
+      row.list.sort((a,b)=>a.x-b.x);
+      const x0=Math.min(...row.list.map(c=>c.x));
+      let y=clamp(row.cy-chh/2,0,1-chh);
+      if(prev>=0&&y<prev+chh*1.1)y=Math.min(prev+chh*1.1,1-chh);
+      row.list.forEach((c,i)=>{c.w=cw;c.h=chh;c.y=y;c.x=clamp(x0+i*pitch,0,1-cw);});
+      prev=y;
+    });
+    save();draw();
   }
   /* Quick start: rows of single desks, or table groups with chairs around each table. */
   function makeRows(r,c){
@@ -1687,26 +1750,30 @@ function buildSeats(w,body,tools,wel){
   function moveDown(e,it,el,resize){
     if(step!=='room'||presenting||e.button>0||(!resize&&e.target.closest('input,button,.seat-rs')))return;
     e.preventDefault();e.stopPropagation();
-    if(selItem!==it.id){selItem=it.id;canvas.querySelectorAll('.seat-item.on').forEach(x=>x.classList.remove('on'));el.classList.add('on');}
+    if(!resize&&e.shiftKey){sel.has(it.id)?sel.delete(it.id):sel.add(it.id);markSel();return;}
+    if(!sel.has(it.id)){sel=new Set([it.id]);markSel();}
     const r=canvas.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,o={x:it.x,y:it.y,w:it.w,h:it.h};
+    /* Everything picked moves together, kept inside the room as a group. */
+    const group=resize?[]:D.items.filter(i=>sel.has(i.id)).map(i=>({it:i,el:canvas.querySelector('[data-id="'+i.id+'"]'),x:i.x,y:i.y}));
     const src=e.currentTarget;src.setPointerCapture(e.pointerId);
     const mv=ev=>{
-      const dx=(ev.clientX-sx)/r.width,dy=(ev.clientY-sy)/r.height;
-      if(resize){it.w=clamp(o.w+dx,.04,1-it.x);it.h=clamp(o.h+dy,.04,1-it.y);}
-      else{it.x=clamp(o.x+dx,0,1-it.w);it.y=clamp(o.y+dy,0,1-it.h);}
-      placeItem(el,it);
+      let dx=(ev.clientX-sx)/r.width,dy=(ev.clientY-sy)/r.height;
+      if(resize){it.w=clamp(o.w+dx,.04,1-it.x);it.h=clamp(o.h+dy,.04,1-it.y);placeItem(el,it);return;}
+      dx=clamp(dx,Math.max(...group.map(g=>-g.x)),Math.min(...group.map(g=>1-g.it.w-g.x)));
+      dy=clamp(dy,Math.max(...group.map(g=>-g.y)),Math.min(...group.map(g=>1-g.it.h-g.y)));
+      group.forEach(g=>{g.it.x=g.x+dx;g.it.y=g.y+dy;if(g.el)placeItem(g.el,g.it);});
     };
     const up=()=>{src.removeEventListener('pointermove',mv);src.removeEventListener('pointerup',up);src.removeEventListener('pointercancel',up);save();};
     src.addEventListener('pointermove',mv);src.addEventListener('pointerup',up);src.addEventListener('pointercancel',up);
   }
   function placeItem(el,it){el.style.left=it.x*100+'%';el.style.top=it.y*100+'%';el.style.width=it.w*100+'%';el.style.height=it.h*100+'%';}
   function itemEl(it,m){
-    const el=h('div',{class:'seat-item seat-'+it.kind+(selItem===it.id?' on':''),'data-id':it.id});
+    const el=h('div',{class:'seat-item seat-'+it.kind+(sel.has(it.id)?' on':''),'data-id':it.id});
     placeItem(el,it);
     if(it.kind==='table'){
       const lb=h('input',{class:'seat-label',value:it.label||'',placeholder:step==='room'?'Table':'','aria-label':'Table label',readonly:step!=='room'});
       lb.addEventListener('input',()=>{it.label=lb.value;save();});
-      lb.addEventListener('focus',()=>{if(step==='room'&&selItem!==it.id){selItem=it.id;canvas.querySelectorAll('.seat-item.on').forEach(x=>x.classList.remove('on'));el.classList.add('on');}});
+      lb.addEventListener('focus',()=>{if(step==='room'&&!sel.has(it.id)){sel=new Set([it.id]);markSel();}});
       const ar=h('button',{class:'chip seat-around',type:'button',title:'Add chairs around this table'},'+ Chairs');
       ar.addEventListener('click',()=>openPop(ar,box=>box.append(h('h3',null,'Chairs around this table'),
         h('div',{class:'pk-chips'},[2,4,6,8].map(n=>h('button',{class:'chip',type:'button',onclick:()=>{closePop();around(it,n);}},String(n)))))));
@@ -1722,7 +1789,7 @@ function buildSeats(w,body,tools,wel){
       el.addEventListener('click',()=>{if(step==='seat'&&pick&&pick.name!==name)seat(pick.name,it.id,pick.from);});
     }
     const x=h('button',{class:'seat-x',type:'button',title:'Remove','aria-label':'Remove'},'×');
-    x.addEventListener('click',()=>removeItem(it.id));
+    x.addEventListener('click',()=>removeItems([it.id]));
     const rs=h('div',{class:'seat-rs',title:'Resize'});
     rs.addEventListener('pointerdown',e=>moveDown(e,it,el,true));
     el.addEventListener('pointerdown',e=>moveDown(e,it,el,false));
@@ -1762,12 +1829,17 @@ function buildSeats(w,body,tools,wel){
     body.classList.toggle('arranging',step==='room');
     if(step==='room'){
       const startOver=h('button',{class:'btn',type:'button'},'Start over');
-      armed(startOver,'Start over',()=>{D.items=[];D.seats={};selItem=null;save();draw();},'Remove all pieces?');
+      armed(startOver,'Start over',()=>{D.items=[];D.seats={};sel=new Set();save();draw();},'Remove all pieces?');
+      const pickedChairs=chairs.filter(c=>sel.has(c.id)).length;
+      const tidyB=h('button',{class:'btn',type:'button',title:pickedChairs>1?'Line up the chosen chairs in even rows':'Line up every chair in even rows'},pickedChairs>1?'Tidy chosen into rows':'Tidy into rows');
+      if(pickedChairs>1||!D.items.some(i=>i.kind==='table'))tidyB.addEventListener('click',tidy);
+      else armed(tidyB,'Tidy into rows',tidy,'Move chairs away from tables?');
       bar.replaceChildren(
         h('button',{class:'btn',type:'button',onclick:()=>add('table')},'+ Table'),
         h('button',{class:'btn',type:'button',onclick:()=>add('chair')},'+ Chair'),
+        ...(chairs.length>1?[tidyB]:[]),
         ...(D.items.length?[startOver]:[]));
-      hint.textContent=!D.items.length?'':selItem?'Drag to move. Drag the corner to resize. The × removes it.':'Click a piece to move, resize, or remove it. When it looks like your room, go to 2. Seat students.';
+      hint.textContent=!D.items.length?'':sel.size>1?'Drag any chosen piece to move them all. Delete removes them. Click empty floor to let go.':sel.size?'Drag to move. Drag the corner to resize. The × removes it.':'Click a piece to move it. Shift-click or drag a box on empty floor to choose several. When it looks like your room, go to 2. Seat students.';
     }else{
       const clsSel=h('select',{class:'sel','aria-label':'Class'},
         S.classes.map(c=>h('option',{value:c.id},c.name||'Untitled class')));
@@ -1784,6 +1856,7 @@ function buildSeats(w,body,tools,wel){
       hint.textContent=!chairs.length?'':!cls?'Add a class first, then seat students.':pick?'Now click a chair for '+pick.name+'.':'Drag a name onto a chair, or click a name, then a chair. Drag a name back down here to unseat it.';
     }
     canvas.replaceChildren(h('div',{class:'seat-front'},'Front of room'),...D.items.map(it=>itemEl(it,m)));
+    canvas.classList.toggle('multi',sel.size>1);
     if(step==='room'&&!D.items.length) canvas.append(quickStart());
     if(step==='seat'&&!chairs.length) canvas.append(h('div',{class:'seat-qs'},h('p',null,'There are no chairs yet.'),h('button',{class:'btn primary',type:'button',onclick:()=>setStep('room')},'Go to 1. Set up room')));
     const seated=new Set(Object.values(m));
